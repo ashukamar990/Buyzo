@@ -1,6 +1,20 @@
-/***********************
- * Demo product dataset (mixed categories) - Added more products
- ***********************/
+// Firebase Integration
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAMDAW2Gvsh8qJY5gZoFvgiMHxO5qjQl-I",
+  authDomain: "videoapp-67c32.firebaseapp.com",
+  databaseURL: "https://videoapp-67c32-default-rtdb.firebaseio.com",
+  projectId: "videoapp-67c32",
+  storageBucket: "videoapp-67c32.firebasestorage.app",
+  messagingSenderId: "711675594877",
+  appId: "1:711675594877:web:7786ab4a432d60e6f70914"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// Demo product dataset (mixed categories) - Added more products
 const PRODUCTS = [
   {id:1,title:"Wireless Earbuds Pro",price:1299,desc:"ENC mic, 24h battery",fullDesc:"High-quality wireless earbuds with environmental noise cancellation microphone and 24 hours of battery life. Perfect for calls, music, and podcasts.",images:[
     "https://images.unsplash.com/photo-1598335622921-7c1b84a3c2bf?auto=format&fit=crop&w=1000&q=60",
@@ -71,19 +85,17 @@ const ordersNotification = document.getElementById('ordersNotification');
 // Offline persistence - Load saved state
 function loadSavedState() {
   try {
-    const savedState = localStorage.getItem('buyzoAppState');
+    const savedState = localStorage.getItem('buyzoCartState');
     if (savedState) {
       const state = JSON.parse(savedState);
       
-      // Restore search input
-      if (state.searchQuery) {
-        searchInput.value = state.searchQuery;
-        const q = state.searchQuery.trim().toLowerCase();
-        if(q) {
+      // Restore search term
+      if (state.searchTerm) {
+        searchInput.value = state.searchTerm;
+        const q = state.searchTerm.trim().toLowerCase();
+        if (q) {
           const filtered = PRODUCTS.filter(p=>p.title.toLowerCase().includes(q));
           renderProducts(filtered);
-        } else {
-          renderProducts();
         }
       }
       
@@ -91,37 +103,102 @@ function loadSavedState() {
       if (state.currentCategory) {
         currentCategory = state.currentCategory;
         document.querySelectorAll('.category-pill').forEach(pill => {
-          pill.classList.remove('active');
           if (pill.getAttribute('data-category') === currentCategory) {
             pill.classList.add('active');
+          } else {
+            pill.classList.remove('active');
           }
         });
       }
       
-      // Restore order draft
+      // Restore order draft if exists
       if (state.orderDraft) {
         orderDraft = state.orderDraft;
       }
       
-      console.log('State restored from localStorage');
+      // Restore current page if it's not products page
+      if (state.currentPage && state.currentPage !== 'productsPage') {
+        showPage(state.currentPage);
+        
+        // If we were on order page and had a product selected, restore it
+        if (state.currentPage === 'orderPage' && state.selectedProductId) {
+          const product = PRODUCTS.find(p => p.id === state.selectedProductId);
+          if (product) {
+            selectedProduct = product;
+            restoreOrderPage();
+          }
+        }
+        
+        // If we were on product detail page, restore it
+        if (state.currentPage === 'productDetailPage' && state.selectedProductId) {
+          showProductDetail(state.selectedProductId);
+        }
+      }
     }
   } catch (e) {
     console.error('Error loading saved state:', e);
   }
 }
 
-// Save state to localStorage
+// Save current state to localStorage
 function saveState() {
-  try {
-    const state = {
-      searchQuery: searchInput.value,
-      currentCategory: currentCategory,
-      orderDraft: orderDraft
-    };
-    localStorage.setItem('buyzoAppState', JSON.stringify(state));
-  } catch (e) {
-    console.error('Error saving state:', e);
+  const state = {
+    searchTerm: searchInput.value,
+    currentCategory: currentCategory,
+    orderDraft: orderDraft,
+    currentPage: document.querySelector('.page.active').id,
+    selectedProductId: selectedProduct ? selectedProduct.id : null
+  };
+  
+  localStorage.setItem('buyzoCartState', JSON.stringify(state));
+}
+
+// Restore order page with selected product
+function restoreOrderPage() {
+  if (!selectedProduct) return;
+  
+  // gallery
+  const main = document.getElementById('galleryMain');
+  main.style.backgroundImage = `url('${selectedProduct.images[0]}')`;
+  
+  // Setup carousel for order page
+  setupCarousel('galleryMain', selectedProduct.images);
+
+  document.getElementById('spTitle').textContent = selectedProduct.title;
+  document.getElementById('spPrice').textContent = `₹${selectedProduct.price}`;
+  document.getElementById('spDesc').textContent = selectedProduct.desc;
+  document.getElementById('spFullDesc').textContent = selectedProduct.fullDesc;
+
+  // size options
+  const sizeSelect = document.getElementById('sizeSelect');
+  sizeSelect.innerHTML = '<option value="">Select size</option>';
+  selectedProduct.sizes.forEach(s=> sizeSelect.insertAdjacentHTML('beforeend', `<option>${s}</option>`));
+  
+  // Restore selected size if exists
+  if (orderDraft.size) {
+    sizeSelect.value = orderDraft.size;
   }
+
+  // Setup quantity control
+  const qtyInput = document.getElementById('qtySelect');
+  qtyInput.value = orderDraft.qty || 1;
+  
+  // Add event listeners to plus/minus buttons
+  document.querySelector('.qty-minus').addEventListener('click', function() {
+    let qty = parseInt(qtyInput.value);
+    if (qty > 1) {
+      qtyInput.value = qty - 1;
+      orderDraft.qty = qty - 1;
+      saveState();
+    }
+  });
+  
+  document.querySelector('.qty-plus').addEventListener('click', function() {
+    let qty = parseInt(qtyInput.value);
+    qtyInput.value = qty + 1;
+    orderDraft.qty = qty + 1;
+    saveState();
+  });
 }
 
 // Show toast notification
@@ -234,7 +311,7 @@ function renderProducts(list=PRODUCTS){
     });
   });
   
-  // Save state after rendering
+  // Save state after rendering products
   saveState();
 }
 
@@ -301,6 +378,10 @@ function showProductDetail(productId) {
   
   // Show product detail page
   showPage('productDetailPage');
+  
+  // Save state
+  selectedProduct = product;
+  saveState();
 }
 
 // Render similar products
@@ -512,6 +593,9 @@ function showMyOrders() {
       viewOrderDetails(index);
     });
   });
+  
+  // Save state
+  saveState();
 }
 
 // Show cancellation modal with reason selection
@@ -620,4 +704,537 @@ function viewOrderDetails(index) {
       
       <div class="order-details-section">
         <div class="order-details-label">Delivery Address</div>
-        <div class
+        <div class="order-details-value">${order.house}, ${order.city}, ${order.state} - ${order.pincode}</div>
+      </div>
+      
+      <div class="order-details-section">
+        <div class="order-details-label">Contact</div>
+        <div class="order-details-value">${order.mobile}</div>
+      </div>
+      
+      <div class="order-details-section">
+        <div class="order-details-label">Payment Method</div>
+        <div class="order-details-value">${order.payment === 'prepaid' ? 'Prepaid (UPI / Card)' : 'Cash on Delivery'}</div>
+      </div>
+    </div>
+  `;
+  
+  // Create a modal for order details
+  const modal = document.createElement('div');
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.zIndex = '1000';
+  
+  const modalContent = document.createElement('div');
+  modalContent.style.backgroundColor = 'white';
+  modalContent.style.padding = '24px';
+  modalContent.style.borrowRadius = 'var(--radius)';
+  modalContent.style.maxWidth = '600px';
+  modalContent.style.width = '90%';
+  modalContent.style.maxHeight = '80%';
+  modalContent.style.overflowY = 'auto';
+  modalContent.innerHTML = orderDetailsHTML;
+  
+  const closeButton = document.createElement('button');
+  closeButton.className = 'btn';
+  closeButton.textContent = 'Close';
+  closeButton.style.marginTop = '20px';
+  closeButton.onclick = function() {
+    document.body.removeChild(modal);
+  };
+  
+  modalContent.appendChild(closeButton);
+  modal.appendChild(modalContent);
+  
+  modal.onclick = function(e) {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  };
+  
+  document.body.appendChild(modal);
+}
+
+// auto sliders for product cards
+function startCardSliders(){
+  document.querySelectorAll('.product-img-slider').forEach(el=>{
+    if(el.dataset.timerId){ clearInterval(Number(el.dataset.timerId)); }
+    const images = JSON.parse(el.dataset.images || '[]');
+    if(!images.length) return;
+    let idx = Number(el.dataset.idx||0);
+    const timerId = setInterval(()=>{
+      idx = (idx + 1) % images.length;
+      el.style.backgroundImage = `url('${images[idx]}')`;
+      el.dataset.idx = idx;
+    }, 2600 + Math.floor(Math.random()*900));
+    el.dataset.timerId = timerId;
+  });
+}
+
+// search only in product titles
+searchInput.addEventListener('input', e=>{
+  const q = e.target.value.trim().toLowerCase();
+  if(!q){ renderProducts(); return; }
+  const filtered = PRODUCTS.filter(p=>p.title.toLowerCase().includes(q));
+  renderProducts(filtered);
+  saveState();
+});
+
+// Enable step navigation
+function enableStep(stepNumber) {
+  const steps = ['pill-order', 'pill-user', 'pill-pay'];
+  if (stepNumber >= 1 && stepNumber <= 3) {
+    document.getElementById(steps[stepNumber-1]).classList.remove('disabled');
+  }
+}
+
+// order button clicks
+document.addEventListener('click', function(e){
+  if(e.target.matches('.orderBtn')){
+    const id = Number(e.target.dataset.id);
+    startOrder(id);
+  }
+});
+
+function startOrder(productId){
+  selectedProduct = PRODUCTS.find(p=>p.id===productId);
+  // gallery
+  const main = document.getElementById('galleryMain');
+  main.style.backgroundImage = `url('${selectedProduct.images[0]}')`;
+  
+  // Setup carousel for order page
+  setupCarousel('galleryMain', selectedProduct.images);
+
+  document.getElementById('spTitle').textContent = selectedProduct.title;
+  document.getElementById('spPrice').textContent = `₹${selectedProduct.price}`;
+  document.getElementById('spDesc').textContent = selectedProduct.desc;
+  document.getElementById('spFullDesc').textContent = selectedProduct.fullDesc;
+
+  // size options
+  const sizeSelect = document.getElementById('sizeSelect');
+  sizeSelect.innerHTML = '<option value="">Select size</option>';
+  selectedProduct.sizes.forEach(s=> sizeSelect.insertAdjacentHTML('beforeend', `<option>${s}</option>`));
+  
+  // Restore selected size if exists
+  if (orderDraft.size) {
+    sizeSelect.value = orderDraft.size;
+  }
+
+  // Setup quantity control
+  const qtyInput = document.getElementById('qtySelect');
+  qtyInput.value = orderDraft.qty || 1;
+  
+  // Add event listeners to plus/minus buttons
+  document.querySelector('.qty-minus').addEventListener('click', function() {
+    let qty = parseInt(qtyInput.value);
+    if (qty > 1) {
+      qtyInput.value = qty - 1;
+      orderDraft.qty = qty - 1;
+      saveState();
+    }
+  });
+  
+  document.querySelector('.qty-plus').addEventListener('click', function() {
+    let qty = parseInt(qtyInput.value);
+    qtyInput.value = qty + 1;
+    orderDraft.qty = qty + 1;
+    saveState();
+  });
+
+  // Enable order step
+  enableStep(1);
+  
+  setActiveStep('order');
+  showPage('orderPage');
+  window.scrollTo(0,0);
+  
+  // Save state
+  saveState();
+}
+
+// Setup carousel with arrows and dots
+function setupCarousel(containerId, images) {
+  const container = document.getElementById(containerId);
+  const dotsContainer = container.querySelector('.carousel-dots');
+  const prevBtn = container.querySelector('.prev');
+  const nextBtn = container.querySelector('.next');
+  
+  // Clear existing dots
+  dotsContainer.innerHTML = '';
+  
+  // Create dots
+  images.forEach((_, index) => {
+    const dot = document.createElement('div');
+    dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
+    dot.addEventListener('click', () => {
+      currentImageIndex = index;
+      updateCarousel(container, images, dotsContainer);
+    });
+    dotsContainer.appendChild(dot);
+  });
+  
+  // Previous button event
+  prevBtn.onclick = () => {
+    currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+    updateCarousel(container, images, dotsContainer);
+  };
+  
+  // Next button event
+  nextBtn.onclick = () => {
+    currentImageIndex = (currentImageIndex + 1) % images.length;
+    updateCarousel(container, images, dotsContainer);
+  };
+  
+  // Initialize carousel
+  updateCarousel(container, images, dotsContainer);
+}
+
+function updateCarousel(container, images, dotsContainer) {
+  // Update main image
+  container.style.backgroundImage = `url('${images[currentImageIndex]}')`;
+  
+  // Update dots
+  const dots = dotsContainer.querySelectorAll('.carousel-dot');
+  dots.forEach((dot, index) => {
+    dot.classList.toggle('active', index === currentImageIndex);
+  });
+}
+
+// steps click navigation with checks
+document.getElementById('pill-products').addEventListener('click', ()=>{ setActiveStep('products'); showPage('productsPage'); });
+document.getElementById('pill-order').addEventListener('click', ()=>{ 
+  if(!document.getElementById('pill-order').classList.contains('disabled')) {
+    if(selectedProduct) { setActiveStep('order'); showPage('orderPage'); } 
+  }
+});
+document.getElementById('pill-user').addEventListener('click', ()=>{ 
+  if(!document.getElementById('pill-user').classList.contains('disabled')) {
+    setActiveStep('user'); showPage('userPage'); 
+  }
+});
+document.getElementById('pill-pay').addEventListener('click', ()=>{ 
+  if(!document.getElementById('pill-pay').classList.contains('disabled')) {
+    setActiveStep('pay'); showPage('paymentPage'); 
+  }
+});
+
+// buttons in order page
+document.getElementById('toUserInfo').addEventListener('click', ()=>{
+  const size = document.getElementById('sizeSelect').value;
+  const qty = Number(document.getElementById('qtySelect').value || 1);
+  if(!size){ alert('Please select a size'); return; }
+  if(qty < 1){ alert('Quantity must be at least 1'); return; }
+  orderDraft.productId = selectedProduct.id;
+  orderDraft.size = size;
+  orderDraft.qty = qty;
+  
+  // Enable user info step
+  enableStep(2);
+  
+  setActiveStep('user');
+  showPage('userPage');
+  window.scrollTo(0,0);
+  
+  // Save state
+  saveState();
+});
+
+document.getElementById('backToProducts').addEventListener('click', ()=>{ 
+  setActiveStep('products'); 
+  showPage('productsPage'); 
+  
+  // Save state
+  saveState();
+});
+
+// Edit order -> back to order
+document.getElementById('editOrder').addEventListener('click', ()=>{ setActiveStep('order'); showPage('orderPage'); });
+
+// user to payment
+document.getElementById('toPayment').addEventListener('click', ()=>{
+  const fullname = document.getElementById('fullname').value.trim();
+  const mobile = document.getElementById('mobile').value.trim();
+  const pincode = document.getElementById('pincode').value.trim();
+  const city = document.getElementById('city').value.trim();
+  const state = document.getElementById('state').value.trim();
+  const house = document.getElementById('house').value.trim();
+
+  if(!fullname || !mobile || !pincode || !city || !state || !house){
+    alert('Please fill all required address fields.');
+    return;
+  }
+  if(!/^\d{10}$/.test(mobile)){ alert('Enter a valid 10-digit mobile number'); return; }
+
+  orderDraft.fullname = fullname; orderDraft.mobile = mobile; orderDraft.pincode = pincode;
+  orderDraft.city = city; orderDraft.state = state; orderDraft.house = house;
+
+  const prod = PRODUCTS.find(p=>p.id===orderDraft.productId);
+  const price = prod.price * orderDraft.qty;
+  const delivery = 50;
+  const total = price + delivery;
+  document.getElementById('sumProduct').textContent = prod.title;
+  document.getElementById('sumQty').textContent = orderDraft.qty;
+  document.getElementById('sumPrice').textContent = `₹${price}`;
+  document.getElementById('sumTotal').textContent = `₹${total}`;
+  document.getElementById('sumDel').textContent = `₹${delivery}`;
+
+  // Enable payment step
+  enableStep(3);
+  
+  setActiveStep('pay');
+  showPage('paymentPage');
+  window.scrollTo(0,0);
+  
+  // Save state
+  saveState();
+});
+
+// payment - back
+document.getElementById('payBack').addEventListener('click', ()=>{ setActiveStep('user'); showPage('userPage'); });
+
+// confirm order
+document.getElementById('confirmOrder').addEventListener('click', ()=>{
+  const payment = document.querySelector('input[name="pay"]:checked').value;
+  orderDraft.payment = payment;
+  orderDraft.timestamp = new Date().toISOString();
+  saveOrderDemo(orderDraft);
+  showSuccess();
+});
+
+// success page actions
+document.getElementById('goHome').addEventListener('click', ()=>{ 
+  // Reset steps
+  document.getElementById('pill-order').classList.add('disabled');
+  document.getElementById('pill-user').classList.add('disabled');
+  document.getElementById('pill-pay').classList.add('disabled');
+  
+  setActiveStep('products'); 
+  showPage('productsPage'); 
+  
+  // Clear order draft
+  orderDraft = {productId:null, size:null, qty:1, fullname:'',mobile:'',pincode:'',city:'',state:'',house:'',payment:'prepaid',timestamp:null};
+  
+  // Save state
+  saveState();
+});
+document.getElementById('viewOrders').addEventListener('click', ()=>{
+  showMyOrders();
+  showPage('myOrdersPage');
+});
+
+// header buttons
+document.getElementById('openContactTop').addEventListener('click', ()=> showPage('contactPage'));
+document.getElementById('openMyOrdersTop').addEventListener('click', ()=> {
+  showMyOrders();
+  showPage('myOrdersPage');
+});
+
+// helper: show page by id
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  
+  // Save state
+  saveState();
+}
+
+function setActiveStep(step){
+  const map = {products:'pill-products', order:'pill-order', user:'pill-user', pay:'pill-pay'};
+  for (const k of Object.keys(map)){
+    const el = document.getElementById(map[k]);
+    if (step === k) {
+      el.style.opacity = 1;
+      el.style.fontWeight = '700';
+      el.style.borderColor = 'var(--accent)';
+      el.style.background = 'var(--accent)';
+      el.style.color = '#fff';
+    } else {
+      el.style.opacity = el.classList.contains('disabled') ? 0.5 : 1;
+      el.style.fontWeight = '600';
+      el.style.borderColor = 'var(--border)';
+      el.style.background = '#fff';
+      el.style.color = 'var(--ink-2)';
+    }
+  }
+}
+
+// demo save order
+function saveOrderDemo(draft){
+  const saved = JSON.parse(localStorage.getItem('demo_orders')||'[]');
+  saved.push({...draft});
+  localStorage.setItem('demo_orders', JSON.stringify(saved));
+  console.log('Order saved (demo):', draft);
+  
+  // Update notification badge
+  updateOrdersNotification();
+}
+
+// success display & confetti
+function showSuccess(){
+  setActiveStep('products');
+  showPage('successPage');
+  runConfetti();
+  
+  // Clear order draft
+  orderDraft = {productId:null, size:null, qty:1, fullname:'',mobile:'',pincode:'',city:'',state:'',house:'',payment:'prepaid',timestamp:null};
+  
+  // Save state
+  saveState();
+}
+
+// enhanced confetti with more celebration
+function runConfetti(){
+  const container = document.createElement('div');
+  container.style.position='fixed'; container.style.left=0; container.style.right=0; container.style.top=0; container.style.bottom=0;
+  container.style.pointerEvents='none'; container.style.zIndex=9999;
+  document.body.appendChild(container);
+  
+  // More vibrant colors for celebration
+  const colors = ['#2563eb','#60a5fa','#93c5fd','#4cc9f0','#9b5de5', '#f15bb5', '#fee440', '#00bbf9', '#00f5d4', '#ff6b6b', '#4ecdc4', '#ff9f1c'];
+  const total = 100; // More particles for a bigger celebration
+  
+  for(let i=0;i<total;i++){
+    const el = document.createElement('div');
+    el.style.position='absolute';
+    el.style.width = (6 + Math.random()*8)+'px';
+    el.style.height = (10 + Math.random()*14)+'px';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.left = (Math.random()*100)+'%';
+    el.style.top = (-10 - Math.random()*20)+'%';
+    el.style.opacity = 0.95;
+    el.style.transform = `rotate(${Math.random()*360}deg)`;
+    el.style.borderRadius = '3px';
+    container.appendChild(el);
+    
+    const dx = (Math.random()*200 - 100);
+    const dur = 2000 + Math.random()*1500;
+    
+    el.animate([
+      { transform: `translate3d(0, 0, 0) rotate(${Math.random()*360}deg)`, opacity:1 },
+      { transform: `translate3d(${dx}px, 900px, 0) rotate(${Math.random()*720}deg)`, opacity:0.9 }
+    ], {duration: dur, easing: 'cubic-bezier(.2,.8,.2,1)'});
+  }
+  
+  // Add some floating thank you message animation
+  const thankYou = document.createElement('div');
+  thankYou.textContent = 'Thank You!';
+  thankYou.style.position = 'fixed';
+  thankYou.style.top = '50%';
+  thankYou.style.left = '50%';
+  thankYou.style.transform = 'translate(-50%, -50%) scale(0)';
+  thankYou.style.fontSize = '48px';
+  thankYou.style.fontWeight = 'bold';
+  thankYou.style.color = 'var(--success)';
+  thankYou.style.zIndex = '10000';
+  thankYou.style.textShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  document.body.appendChild(thankYou);
+  
+  thankYou.animate([
+    { transform: 'translate(-50%, -50%) scale(0)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1.2)', opacity: 1 },
+    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 }
+  ], { duration: 1000, easing: 'ease-out' });
+  
+  setTimeout(() => {
+    thankYou.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 0 }
+    ], { duration: 500, delay: 1500, easing: 'ease-in' }).onfinish = () => {
+      document.body.removeChild(thankYou);
+    };
+  }, 1000);
+  
+  setTimeout(()=>{ 
+    container.remove(); 
+  }, 3500);
+}
+
+// Category filtering
+function setupCategoryFilter() {
+  const categoryPills = document.querySelectorAll('.category-pill');
+  
+  categoryPills.forEach(pill => {
+    pill.addEventListener('click', function() {
+      // Update active state
+      categoryPills.forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Set current category
+      currentCategory = this.getAttribute('data-category');
+      
+      // Re-render products
+      renderProducts(PRODUCTS);
+      
+      // Save state
+      saveState();
+    });
+  });
+}
+
+// Setup cancellation modal events
+function setupCancellationModal() {
+  document.getElementById('cancelModalClose').addEventListener('click', closeCancellationModal);
+  document.getElementById('cancelModalConfirm').addEventListener('click', confirmCancellation);
+  
+  // Close modal when clicking outside
+  document.getElementById('cancellationModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeCancellationModal();
+    }
+  });
+  
+  // Add styling to radio buttons when selected
+  document.querySelectorAll('.cancellation-reason input').forEach(radio => {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.cancellation-reason').forEach(label => {
+        label.classList.remove('selected');
+      });
+      
+      if (this.checked) {
+        this.parentElement.classList.add('selected');
+      }
+    });
+  });
+}
+
+// Setup alert modal events
+function setupAlertModal() {
+  document.getElementById('alertModalCancel').addEventListener('click', closeAlertModal);
+  document.getElementById('alertModalConfirm').addEventListener('click', function() {
+    if (alertModalConfirmCallback) {
+      alertModalConfirmCallback();
+    }
+    closeAlertModal();
+  });
+  
+  // Close modal when clicking outside
+  document.getElementById('alertModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeAlertModal();
+    }
+  });
+}
+
+// initial render
+renderProducts();
+renderProductSlider();
+setupCategoryFilter();
+setupCancellationModal();
+setupAlertModal();
+updateOrdersNotification();
+
+// Load saved state on page load
+window.addEventListener('DOMContentLoaded', function() {
+  loadSavedState();
+});
+
+// Make showPage function available globally for HTML onclick handlers
+window.showPage = showPage;
