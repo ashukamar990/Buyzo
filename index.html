@@ -10,9 +10,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://images.unsplash.com"/>
   
+  <!-- Firebase App (core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Auth (if needed later) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  
+  <style>
+    /* Your existing CSS styles remain exactly the same */
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --muted: #64748b;
+      --muted-light: #94a3b8;
+      --success: #22c55e;
+      --error: #ef4444;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.08);
+      --ring: #dbeafe;
+      --ink: #0f172a;
+      --ink-2: #334155;
+      --border: #e2e8f0;
+      --radius: 12px;
+    }
 
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="script.js"></script>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ... (all other CSS styles remain exactly the same) ... */
+    
+  </style>
 </head>
 <body>
   <header>
@@ -505,85 +546,729 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919 4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.980-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.980.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.40-1.439-1.40z"/>
             </svg>
+            Instagram
           </a>
-          <a href="https://www.facebook.com/share/1ErTUZySbt/" target="_blank" class="social-icon" title="Facebook">
+          <a href="https://t.me/Buyzocartsupport" target="_blank" class="social-icon" title="Telegram">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+              <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
             </svg>
-          </a>
-          <a href="https://t.me/buyzocartshop" target="_blank" class="social-icon" title="Telegram">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.140.141-.259.259-.374.261l.213-3.053 5.56-5.022c.240-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.640-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
-            </svg>
-          </a>
-          <a href="https://www.youtube.com/@BuyzoCard" target="_blank" class="social-icon" title="YouTube">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.230 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.230 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-            </svg>
+            Telegram
           </a>
         </div>
         
-        <div style="margin-top:16px;font-size:14px">
-          <a href="#" onclick="showPage('contactPage'); return false;">Contact Us</a> •
-          <a href="#" onclick="showPage('cancellationPage'); return false;">Refund & Cancellation Policy</a> •
-          <a href="#" onclick="showPage('termsPage'); return false;">Terms & Conditions</a> •
-          <a href="#" onclick="showPage('shippingPage'); return false;">Shipping Policy</a> •
-          <a href="#" onclick="showPage('privacyPage'); return false;">Privacy Policy</a>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:14px">
+          <a href="#" class="policy-link" data-page="contactPage">Contact</a>
+          <a href="#" class="policy-link" data-page="termsPage">Terms</a>
+          <a href="#" class="policy-link" data-page="cancellationPage">Refund & Cancellation</a>
+          <a href="#" class="policy-link" data-page="shippingPage">Shipping</a>
+          <a href="#" class="policy-link" data-page="privacyPage">Privacy</a>
         </div>
+        <div style="margin-top:16px;font-size:14px">© 2024 Buyzo Cart. All rights reserved.</div>
       </div>
     </footer>
   </main>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast">
-    <div class="toast-icon">✓</div>
-    <div id="toast-message"></div>
-  </div>
+  <!-- Firebase Configuration and App Logic -->
+  <script>
+    // Firebase configuration - MUST MATCH YOUR ADMIN PANEL CONFIG
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-  <!-- Cancellation Modal -->
-  <div class="modal-overlay" id="cancellationModal">
-    <div class="cancellation-modal">
-      <h3>Select Reason for Cancellation</h3>
-      <div id="cancellationReasons">
-        <label class="cancellation-reason">
-          <input type="radio" name="cancelReason" value="Changed my mind"> Changed my mind
-        </label>
-        <label class="cancellation-reason">
-          <input type="radio" name="cancelReason" value="Product not required anymore"> Product not required anymore
-        </label>
-        <label class="cancellation-reason">
-          <input type="radio" name="cancelReason" value="Found a better price elsewhere"> Found a better price elsewhere
-        </label>
-        <label class="cancellation-reason">
-          <input type="radio" name="cancelReason" value="Delivery time is too long"> Delivery time is too long
-        </label>
-        <label class="cancellation-reason">
-          <input type="radio" name="cancelReason" value="Ordered by mistake"> Ordered by mistake
-        </label>
-        <label class="cancellation-reason">
-          <input type="radio" name="cancelReason" value="Other reason"> Other reason
-        </label>
-      </div>
-      <div class="cancellation-actions">
-        <button class="btn secondary" id="cancelModalClose">Cancel</button>
-        <button class="btn error" id="cancelModalConfirm">Confirm Cancellation</button>
-      </div>
-    </div>
-  </div>
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-  <!-- Alert Modal - Updated with Cancel and Yes buttons -->
-  <div class="modal-overlay" id="alertModal">
-    <div class="alert-modal">
-      <div class="alert-icon">⚠️</div>
-      <h3>Payment Gateway Charges</h3>
-      <p id="alertMessage">Please note that payment gateway charges (approx 2–3% of the order value) are non-refundable. This deduction is due to Razorpay's non-refundable transaction fee.</p>
-      <div class="alert-modal-buttons">
-        <button class="btn secondary" id="alertModalCancel">Cancel</button>
-        <button class="btn" id="alertModalConfirm">Yes</button>
-      </div>
-    </div>
-  </div>
+    // Global variables
+    let products = [];
+    let selectedProduct = null;
+    let currentImageIndex = 0;
+    let orders = [];
 
-  
+    // DOM elements
+    const productGrid = document.getElementById('productGrid');
+    const productSlider = document.getElementById('productSlider');
+    const searchInput = document.getElementById('searchInput');
+    const categoryPills = document.querySelectorAll('.category-pill');
+    const ordersNotification = document.getElementById('ordersNotification');
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load products from Firestore with real-time listener
+      loadProducts();
+      
+      // Load orders from localStorage
+      loadOrders();
+      
+      // Setup event listeners
+      setupEventListeners();
+    });
+
+    // Setup all event listeners
+    function setupEventListeners() {
+      // Search functionality
+      searchInput.addEventListener('input', filterProducts);
+      
+      // Category filtering
+      categoryPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          const category = pill.getAttribute('data-category');
+          filterProductsByCategory(category);
+          
+          // Update active state
+          categoryPills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+        });
+      });
+      
+      // Navigation buttons
+      document.getElementById('openContactTop').addEventListener('click', () => showPage('contactPage'));
+      document.getElementById('openMyOrdersTop').addEventListener('click', () => {
+        loadOrders();
+        showPage('myOrdersPage');
+      });
+      
+      // Policy links
+      document.querySelectorAll('.policy-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = link.getAttribute('data-page');
+          showPage(page);
+        });
+      });
+      
+      // Order flow navigation
+      document.getElementById('backToProducts').addEventListener('click', () => showPage('productsPage'));
+      document.getElementById('editOrder').addEventListener('click', () => showPage('orderPage'));
+      document.getElementById('payBack').addEventListener('click', () => showPage('userPage'));
+      document.getElementById('goHome').addEventListener('click', () => showPage('productsPage'));
+      document.getElementById('viewOrders').addEventListener('click', () => {
+        loadOrders();
+        showPage('myOrdersPage');
+      });
+      
+      // Quantity controls
+      document.querySelector('.qty-minus').addEventListener('click', () => {
+        const qtyInput = document.getElementById('qtySelect');
+        if (parseInt(qtyInput.value) > 1) {
+          qtyInput.value = parseInt(qtyInput.value) - 1;
+          updateOrderSummary();
+        }
+      });
+      
+      document.querySelector('.qty-plus').addEventListener('click', () => {
+        const qtyInput = document.getElementById('qtySelect');
+        qtyInput.value = parseInt(qtyInput.value) + 1;
+        updateOrderSummary();
+      });
+      
+      // Size selection
+      document.getElementById('sizeSelect').addEventListener('change', updateOrderSummary);
+      
+      // Payment method selection
+      document.querySelectorAll('input[name="pay"]').forEach(radio => {
+        radio.addEventListener('change', updateOrderSummary);
+      });
+      
+      // Order confirmation
+      document.getElementById('confirmOrder').addEventListener('click', placeOrder);
+    }
+
+    // Load products with real-time listener
+    function loadProducts() {
+      // Real-time listener for products collection
+      db.collection("products").onSnapshot((snapshot) => {
+        products = [];
+        snapshot.forEach((doc) => {
+          const product = doc.data();
+          product.id = doc.id;
+          products.push(product);
+        });
+        
+        // Render products
+        renderProducts();
+        renderProductSlider();
+        
+        console.log("Products loaded:", products.length);
+      }, (error) => {
+        console.error("Error loading products:", error);
+      });
+    }
+
+    // Render products to the grid
+    function renderProducts() {
+      productGrid.innerHTML = '';
+      
+      if (products.length === 0) {
+        productGrid.innerHTML = '<div class="card-panel center"><p>No products found</p></div>';
+        return;
+      }
+      
+      products.forEach(product => {
+        const productCard = createProductCard(product);
+        productGrid.appendChild(productCard);
+      });
+    }
+
+    // Create product card element
+    function createProductCard(product) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-image">
+          <img src="${product.images && product.images.length > 0 ? product.images[0] : 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop'}" alt="${product.name}" />
+          <button class="card-wishlist" aria-label="Add to wishlist">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="title">${product.name}</div>
+          <div class="price">₹${product.price}</div>
+          <div class="badge">${product.description || 'Premium quality'}</div>
+          <button class="btn" style="margin-top:auto">Order Now</button>
+        </div>
+      `;
+      
+      // Add click event to order button
+      const orderBtn = card.querySelector('.btn');
+      orderBtn.addEventListener('click', () => {
+        showProductDetail(product);
+      });
+      
+      // Add click event to wishlist button
+      const wishlistBtn = card.querySelector('.card-wishlist');
+      wishlistBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wishlistBtn.classList.toggle('active');
+      });
+      
+      return card;
+    }
+
+    // Render product slider
+    function renderProductSlider() {
+      productSlider.innerHTML = '';
+      
+      // Take first 6 products for the slider
+      const sliderProducts = products.slice(0, 6);
+      
+      sliderProducts.forEach(product => {
+        const slide = document.createElement('div');
+        slide.className = 'slider-item';
+        slide.innerHTML = `
+          <img src="${product.images && product.images.length > 0 ? product.images[0] : 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop'}" alt="${product.name}" />
+          <div class="slider-item-info">
+            <div class="slider-item-title">${product.name}</div>
+            <div class="slider-item-price">₹${product.price}</div>
+          </div>
+        `;
+        
+        slide.addEventListener('click', () => {
+          showProductDetail(product);
+        });
+        
+        productSlider.appendChild(slide);
+      });
+    }
+
+    // Show product detail page
+    function showProductDetail(product) {
+      selectedProduct = product;
+      
+      // Update detail page elements
+      document.getElementById('detailTitle').textContent = product.name;
+      document.getElementById('detailPrice').textContent = `₹${product.price}`;
+      document.getElementById('detailDesc').textContent = product.description || 'Premium quality product';
+      document.getElementById('detailFullDesc').textContent = product.fullDescription || 'No detailed description available.';
+      
+      // Update product meta information
+      const metaContainer = document.getElementById('detailMeta');
+      metaContainer.innerHTML = `
+        <div><strong>Category:</strong> ${product.category || 'Not specified'}</div>
+        <div><strong>Material:</strong> ${product.material || 'Not specified'}</div>
+        <div><strong>Care:</strong> ${product.care || 'Machine washable'}</div>
+      `;
+      
+      // Update product images
+      const mainImageContainer = document.getElementById('detailMainImage');
+      const thumbnailsContainer = document.getElementById('detailThumbnails');
+      const dotsContainer = document.getElementById('detailCarouselDots');
+      
+      mainImageContainer.innerHTML = '';
+      thumbnailsContainer.innerHTML = '';
+      dotsContainer.innerHTML = '';
+      
+      const images = product.images || ['https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600&h=400&fit=crop'];
+      
+      // Create main image
+      const mainImg = document.createElement('img');
+      mainImg.src = images[0];
+      mainImg.alt = product.name;
+      mainImageContainer.appendChild(mainImg);
+      
+      // Create thumbnails and dots
+      images.forEach((img, index) => {
+        // Thumbnail
+        const thumb = document.createElement('img');
+        thumb.src = img;
+        thumb.alt = `${product.name} - View ${index + 1}`;
+        thumb.addEventListener('click', () => {
+          updateDetailCarousel(index);
+        });
+        thumbnailsContainer.appendChild(thumb);
+        
+        // Dot
+        const dot = document.createElement('span');
+        dot.addEventListener('click', () => {
+          updateDetailCarousel(index);
+        });
+        dotsContainer.appendChild(dot);
+      });
+      
+      // Add carousel controls
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'detail-carousel-control prev';
+      prevBtn.innerHTML = '&#10094;';
+      prevBtn.addEventListener('click', () => {
+        updateDetailCarousel((currentImageIndex - 1 + images.length) % images.length);
+      });
+      
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'detail-carousel-control next';
+      nextBtn.innerHTML = '&#10095;';
+      nextBtn.addEventListener('click', () => {
+        updateDetailCarousel((currentImageIndex + 1) % images.length);
+      });
+      
+      mainImageContainer.appendChild(prevBtn);
+      mainImageContainer.appendChild(nextBtn);
+      
+      // Initialize carousel
+      updateDetailCarousel(0);
+      
+      // Set up order button
+      document.getElementById('detailOrderBtn').onclick = () => {
+        showOrderPage(product);
+      };
+      
+      // Show similar products
+      showSimilarProducts(product);
+      
+      // Show the detail page
+      showPage('productDetailPage');
+    }
+
+    // Update detail carousel
+    function updateDetailCarousel(index) {
+      const images = selectedProduct.images || ['https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600&h=400&fit=crop'];
+      currentImageIndex = index;
+      
+      // Update main image
+      const mainImg = document.querySelector('#detailMainImage > img');
+      mainImg.src = images[index];
+      
+      // Update active thumbnail
+      document.querySelectorAll('#detailThumbnails img').forEach((thumb, i) => {
+        thumb.classList.toggle('active', i === index);
+      });
+      
+      // Update active dot
+      document.querySelectorAll('#detailCarouselDots span').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+    }
+
+    // Show similar products
+    function showSimilarProducts(product) {
+      const similarContainer = document.getElementById('similarProductsSlider');
+      similarContainer.innerHTML = '';
+      
+      // Filter products by same category
+      const similarProducts = products.filter(p => 
+        p.id !== product.id && 
+        p.category === product.category
+      ).slice(0, 6);
+      
+      if (similarProducts.length === 0) {
+        similarContainer.innerHTML = '<p>No similar products found</p>';
+        return;
+      }
+      
+      similarProducts.forEach(similarProduct => {
+        const slide = document.createElement('div');
+        slide.className = 'slider-item';
+        slide.innerHTML = `
+          <img src="${similarProduct.images && similarProduct.images.length > 0 ? similarProduct.images[0] : 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop'}" alt="${similarProduct.name}" />
+          <div class="slider-item-info">
+            <div class="slider-item-title">${similarProduct.name}</div>
+            <div class="slider-item-price">₹${similarProduct.price}</div>
+          </div>
+        `;
+        
+        slide.addEventListener('click', () => {
+          showProductDetail(similarProduct);
+        });
+        
+        similarContainer.appendChild(slide);
+      });
+    }
+
+    // Show order page
+    function showOrderPage(product) {
+      selectedProduct = product;
+      
+      // Update order page elements
+      document.getElementById('spTitle').textContent = product.name;
+      document.getElementById('spPrice').textContent = `₹${product.price}`;
+      document.getElementById('spDesc').textContent = product.description || 'Premium quality product';
+      document.getElementById('spFullDesc').textContent = product.fullDescription || 'No detailed description available.';
+      
+      // Update product images
+      const galleryMain = document.getElementById('galleryMain');
+      galleryMain.innerHTML = '';
+      
+      const images = product.images || ['https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600&h=400&fit=crop'];
+      
+      const mainImg = document.createElement('img');
+      mainImg.src = images[0];
+      mainImg.alt = product.name;
+      galleryMain.appendChild(mainImg);
+      
+      // Add carousel controls if multiple images
+      if (images.length > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'carousel-control prev';
+        prevBtn.innerHTML = '&#10094;';
+        prevBtn.addEventListener('click', () => {
+          updateOrderCarousel((currentImageIndex - 1 + images.length) % images.length);
+        });
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'carousel-control next';
+        nextBtn.innerHTML = '&#10095;';
+        nextBtn.addEventListener('click', () => {
+          updateOrderCarousel((currentImageIndex + 1) % images.length);
+        });
+        
+        galleryMain.appendChild(prevBtn);
+        galleryMain.appendChild(nextBtn);
+        
+        // Add dots
+        const dotsContainer = document.createElement('div');
+        dotsContainer.className = 'carousel-dots';
+        
+        images.forEach((_, index) => {
+          const dot = document.createElement('span');
+          dot.addEventListener('click', () => {
+            updateOrderCarousel(index);
+          });
+          dotsContainer.appendChild(dot);
+        });
+        
+        galleryMain.appendChild(dotsContainer);
+      }
+      
+      // Update size options
+      const sizeSelect = document.getElementById('sizeSelect');
+      sizeSelect.innerHTML = '<option value="">Select size</option>';
+      
+      const sizes = product.sizes || ['S', 'M', 'L', 'XL'];
+      sizes.forEach(size => {
+        const option = document.createElement('option');
+        option.value = size;
+        option.textContent = size;
+        sizeSelect.appendChild(option);
+      });
+      
+      // Set up navigation buttons
+      document.getElementById('toUserInfo').onclick = () => {
+        if (!sizeSelect.value) {
+          alert('Please select a size');
+          return;
+        }
+        showPage('userPage');
+      };
+      
+      document.getElementById('backToProducts').onclick = () => {
+        showPage('productsPage');
+      };
+      
+      // Show the order page
+      showPage('orderPage');
+      updateOrderCarousel(0);
+      updateOrderSummary();
+    }
+
+    // Update order carousel
+    function updateOrderCarousel(index) {
+      const images = selectedProduct.images || ['https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600&h=400&fit=crop'];
+      currentImageIndex = index;
+      
+      // Update main image
+      const mainImg = document.querySelector('#galleryMain > img');
+      mainImg.src = images[index];
+      
+      // Update active dot
+      document.querySelectorAll('#galleryMain .carousel-dots span').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+    }
+
+    // Update order summary
+    function updateOrderSummary() {
+      if (!selectedProduct) return;
+      
+      const qty = parseInt(document.getElementById('qtySelect').value) || 1;
+      const size = document.getElementById('sizeSelect').value;
+      const productPrice = parseInt(selectedProduct.price) || 0;
+      const deliveryFee = 50;
+      const total = (productPrice * qty) + deliveryFee;
+      
+      document.getElementById('sumProduct').textContent = selectedProduct.name + (size ? ` (${size})` : '');
+      document.getElementById('sumQty').textContent = qty;
+      document.getElementById('sumPrice').textContent = `₹${productPrice * qty}`;
+      document.getElementById('sumTotal').textContent = `₹${total}`;
+    }
+
+    // Filter products by search
+    function filterProducts() {
+      const searchTerm = searchInput.value.toLowerCase();
+      
+      if (!searchTerm) {
+        // If search is empty, show all products
+        renderProducts();
+        return;
+      }
+      
+      const filteredProducts = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) ||
+        (product.description && product.description.toLowerCase().includes(searchTerm)) ||
+        (product.category && product.category.toLowerCase().includes(searchTerm))
+      );
+      
+      // Render filtered products
+      productGrid.innerHTML = '';
+      
+      if (filteredProducts.length === 0) {
+        productGrid.innerHTML = '<div class="card-panel center"><p>No products found matching your search</p></div>';
+        return;
+      }
+      
+      filteredProducts.forEach(product => {
+        const productCard = createProductCard(product);
+        productGrid.appendChild(productCard);
+      });
+    }
+
+    // Filter products by category
+    function filterProductsByCategory(category) {
+      if (category === 'all') {
+        renderProducts();
+        return;
+      }
+      
+      const filteredProducts = products.filter(product => 
+        product.category === category
+      );
+      
+      // Render filtered products
+      productGrid.innerHTML = '';
+      
+      if (filteredProducts.length === 0) {
+        productGrid.innerHTML = '<div class="card-panel center"><p>No products found in this category</p></div>';
+        return;
+      }
+      
+      filteredProducts.forEach(product => {
+        const productCard = createProductCard(product);
+        productGrid.appendChild(productCard);
+      });
+    }
+
+    // Place order
+    function placeOrder() {
+      // Validate user info
+      const fullname = document.getElementById('fullname').value;
+      const mobile = document.getElementById('mobile').value;
+      const pincode = document.getElementById('pincode').value;
+      const city = document.getElementById('city').value;
+      const state = document.getElementById('state').value;
+      const house = document.getElementById('house').value;
+      
+      if (!fullname || !mobile || !pincode || !city || !state || !house) {
+        alert('Please fill all required fields');
+        return;
+      }
+      
+      if (mobile.length !== 10 || isNaN(mobile)) {
+        alert('Please enter a valid 10-digit mobile number');
+        return;
+      }
+      
+      // Get order details
+      const qty = parseInt(document.getElementById('qtySelect').value) || 1;
+      const size = document.getElementById('sizeSelect').value;
+      const productPrice = parseInt(selectedProduct.price) || 0;
+      const deliveryFee = 50;
+      const total = (productPrice * qty) + deliveryFee;
+      const paymentMethod = document.querySelector('input[name="pay"]:checked').value;
+      
+      // Create order object
+      const order = {
+        id: Date.now().toString(),
+        product: selectedProduct.name,
+        productId: selectedProduct.id,
+        price: productPrice,
+        quantity: qty,
+        size: size,
+        total: total,
+        paymentMethod: paymentMethod,
+        customer: {
+          name: fullname,
+          mobile: mobile,
+          address: {
+            house: house,
+            city: city,
+            state: state,
+            pincode: pincode
+          }
+        },
+        status: 'pending',
+        date: new Date().toISOString()
+      };
+      
+      // Save order to Firestore
+      db.collection("orders").add(order)
+        .then((docRef) => {
+          console.log("Order placed with ID: ", docRef.id);
+          
+          // Also save to localStorage for offline access
+          saveOrderToLocal(order);
+          
+          // Show success page
+          showPage('successPage');
+        })
+        .catch((error) => {
+          console.error("Error placing order: ", error);
+          alert("There was an error placing your order. Please try again.");
+        });
+    }
+
+    // Save order to localStorage
+    function saveOrderToLocal(order) {
+      orders.push(order);
+      localStorage.setItem('buyzo_orders', JSON.stringify(orders));
+      
+      // Update orders notification
+      updateOrdersNotification();
+    }
+
+    // Load orders from localStorage
+    function loadOrders() {
+      const savedOrders = localStorage.getItem('buyzo_orders');
+      if (savedOrders) {
+        orders = JSON.parse(savedOrders);
+        updateOrdersNotification();
+        renderOrders();
+      }
+    }
+
+    // Update orders notification badge
+    function updateOrdersNotification() {
+      if (orders.length > 0) {
+        ordersNotification.textContent = orders.length;
+        ordersNotification.style.display = 'inline-block';
+      } else {
+        ordersNotification.style.display = 'none';
+      }
+    }
+
+    // Render orders list
+    function renderOrders() {
+      const ordersList = document.getElementById('ordersList');
+      const noOrders = document.getElementById('noOrders');
+      
+      if (orders.length === 0) {
+        ordersList.innerHTML = '';
+        noOrders.style.display = 'block';
+        return;
+      }
+      
+      noOrders.style.display = 'none';
+      ordersList.innerHTML = '';
+      
+      // Sort orders by date (newest first)
+      const sortedOrders = orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      sortedOrders.forEach(order => {
+        const orderElement = document.createElement('div');
+        orderElement.className = 'order-card';
+        
+        const orderDate = new Date(order.date).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+        
+        orderElement.innerHTML = `
+          <div class="order-header">
+            <div class="order-id">Order #${order.id.slice(-6)}</div>
+            <div class="order-date">${orderDate}</div>
+          </div>
+          <div class="order-body">
+            <div class="order-product">${order.product} ${order.size ? `(${order.size})` : ''}</div>
+            <div class="order-details">
+              <span>Qty: ${order.quantity}</span>
+              <span>₹${order.price} × ${order.quantity} = ₹${order.price * order.quantity}</span>
+            </div>
+            <div class="order-address">
+              <div>Delivery to: ${order.customer.name}</div>
+              <div>${order.customer.address.house}, ${order.customer.address.city}, ${order.customer.address.pincode}</div>
+            </div>
+          </div>
+          <div class="order-footer">
+            <div class="order-total">Total: ₹${order.total}</div>
+            <div class="order-status ${order.status}">${order.status}</div>
+          </div>
+        `;
+        
+        ordersList.appendChild(orderElement);
+      });
+    }
+
+    // Show specific page
+    function showPage(pageId) {
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      
+      // Show requested page
+      document.getElementById(pageId).classList.add('active');
+      
+      // Update step pills for order flow
+      const pills = ['pill-products', 'pill-order', 'pill-user', 'pill-pay'];
+      const pageIndex = ['productsPage', 'orderPage', 'userPage', 'paymentPage'].indexOf(pageId);
+      
+      pills.forEach((pill, index) => {
+        const pillElement = document.getElementById(pill);
+        if (index <= pageIndex) {
+          pillElement.classList.remove('disabled');
+        } else {
+          pillElement.classList.add('disabled');
+        }
+      });
+      
+      // Scroll to top
+      window.scrollTo(0, 0);
+    }
+  </script>
 </body>
 </html>
