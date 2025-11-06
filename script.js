@@ -2,7 +2,6 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAeB7VzIxJaNYagUPoKd-kN5HXmLbS2-Vw",
       authDomain: "videomanager-23d98.firebaseapp.com",
-      databaseURL: "https://videomanager-23d98-default-rtdb.firebaseio.com",
       projectId: "videomanager-23d98",
       storageBucket: "videomanager-23d98.firebasestorage.app",
       messagingSenderId: "847321523576",
