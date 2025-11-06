@@ -1,12 +1,13 @@
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyD4XKx1-0rQK9SXHh4fQn5k8b8t8z7Y6j8",
-  authDomain: "buyzocart-7a3f4.firebaseapp.com",
-  projectId: "buyzocart-7a3f4",
-  storageBucket: "buyzocart-7a3f4.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef123456",
-  measurementId: "G-ABCDEF1234"
+  apiKey: "AIzaSyAeB7VzIxJaNYagUPoKd-kN5HXmLbS2-Vw",
+  authDomain: "videomanager-23d98.firebaseapp.com",
+  databaseURL: "https://videomanager-23d98-default-rtdb.firebaseio.com",
+  projectId: "videomanager-23d98",
+  storageBucket: "videomanager-23d98.firebasestorage.app",
+  messagingSenderId: "847321523576",
+  appId: "1:847321523576:web:bda3f5026e3e163603548d",
+  measurementId: "G-YBSJ1KMPV4"
 };
 
 // Initialize Firebase
@@ -1803,3 +1804,4 @@ function loadSampleBanners() {
     {
       id: '2', 
       image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8
+[file content end]
