@@ -1,3 +1,5 @@
+[file name]: index.html
+[file content begin]
 <!DOCTYPE html>
 
 <html lang="en">
@@ -1393,8 +1395,328 @@
 </div>
 </div>
 <!-- Firebase Configuration -->
+<script>
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDp1c8Vg8Q2Q3Q4Q5Q6Q7Q8Q9Q0Q1Q2Q3Q4",
+    authDomain: "buyzocartshop.firebaseapp.com",
+    projectId: "buyzocartshop",
+    storageBucket: "buyzocartshop.appspot.com",
+    messagingSenderId: "123456789012",
+    appId: "1:123456789012:web:abcdefghijklmnopqrstuv"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  
+  // Initialize EmailJS
+  emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
+</script>
 
 <!-- JavaScript -->
+<script>
+// FIXED: Auto-close login modal after successful authentication
+function handleAuthSuccess(user) {
+  hideLoginModal();
+  updateUserProfile(user);
+  loadUserAccountData();
+  showToast('Login successful!', 'success');
+}
 
-<script defer="True" src="script.js"></script></body>
+// FIXED: Update user profile information
+function updateUserProfile(user) {
+  const userName = user.displayName || user.email.split('@')[0];
+  const userEmail = user.email;
+  const userInitial = userName.charAt(0).toUpperCase();
+  
+  // Update desktop profile
+  document.getElementById('userAvatar').textContent = userInitial;
+  document.getElementById('userName').textContent = userName;
+  document.getElementById('accountEmail').textContent = userEmail;
+  document.getElementById('userProfile').style.display = 'flex';
+  document.getElementById('openLoginTop').style.display = 'none';
+  
+  // Update mobile profile
+  document.getElementById('mobileUserName').textContent = userName;
+  document.getElementById('mobileUserProfile').style.display = 'flex';
+  document.getElementById('mobileLoginBtn').style.display = 'none';
+}
+
+// FIXED: Load user account data
+function loadUserAccountData() {
+  const user = firebase.auth().currentUser;
+  if (user) {
+    document.getElementById('accountPageName').textContent = user.displayName || 'User Name';
+    document.getElementById('accountPageEmail').textContent = user.email;
+    document.getElementById('accountPageAvatar').textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+    document.getElementById('profileName').value = user.displayName || '';
+    document.getElementById('profileEmail').value = user.email;
+  }
+}
+
+// FIXED: Wishlist functionality
+function toggleWishlist(productId) {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showLoginModal();
+    return;
+  }
+  
+  const db = firebase.firestore();
+  const wishlistRef = db.collection('wishlist').doc(user.uid);
+  
+  wishlistRef.get().then((doc) => {
+    if (doc.exists) {
+      const wishlist = doc.data().items || [];
+      const isInWishlist = wishlist.includes(productId);
+      
+      if (isInWishlist) {
+        // Remove from wishlist
+        const updatedWishlist = wishlist.filter(id => id !== productId);
+        wishlistRef.set({ items: updatedWishlist });
+        showToast('Removed from wishlist', 'success');
+        updateWishlistHeartIcon(productId, false);
+      } else {
+        // Add to wishlist
+        wishlist.push(productId);
+        wishlistRef.set({ items: wishlist });
+        showToast('Added to wishlist', 'success');
+        updateWishlistHeartIcon(productId, true);
+      }
+    } else {
+      // Create new wishlist
+      wishlistRef.set({ items: [productId] });
+      showToast('Added to wishlist', 'success');
+      updateWishlistHeartIcon(productId, true);
+    }
+  });
+}
+
+// FIXED: Update wishlist heart icon
+function updateWishlistHeartIcon(productId, isInWishlist) {
+  const heartIcons = document.querySelectorAll(`[data-product-id="${productId}"]`);
+  heartIcons.forEach(icon => {
+    if (isInWishlist) {
+      icon.classList.add('active');
+      icon.innerHTML = '<svg fill="red" stroke="red" ...></svg>';
+    } else {
+      icon.classList.remove('active');
+      icon.innerHTML = '<svg fill="none" stroke="currentColor" ...></svg>';
+    }
+  });
+}
+
+// FIXED: Product sharing with direct links
+function generateProductShareLink(productId) {
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?product=${productId}`;
+}
+
+// FIXED: Handle product links on page load
+function handleProductLinks() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('product');
+  
+  if (productId) {
+    showProductDetail(productId);
+    showPage('productDetailPage');
+  }
+}
+
+// FIXED: Banner carousel with manual control
+let bannerAutoSlide = true;
+let bannerSlideInterval;
+
+function initBannerCarousel() {
+  const track = document.getElementById('bannerTrack');
+  const banners = [
+    { image: 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae', title: 'Summer Sale' },
+    { image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8', title: 'New Arrivals' },
+    { image: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a', title: 'Limited Time Offer' }
+  ];
+  
+  // Add banners to track
+  banners.forEach((banner, index) => {
+    const bannerElement = document.createElement('div');
+    bannerElement.className = 'banner-slide';
+    bannerElement.innerHTML = `
+      <img src="${banner.image}" alt="${banner.title}" />
+      <div class="banner-content">
+        <h3>${banner.title}</h3>
+      </div>
+    `;
+    track.appendChild(bannerElement);
+  });
+  
+  // Start auto-slide
+  startBannerAutoSlide();
+  
+  // Add touch/swipe support
+  let startX = 0;
+  let isDragging = false;
+  
+  track.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    isDragging = true;
+    stopBannerAutoSlide();
+  });
+  
+  track.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    const currentX = e.touches[0].clientX;
+    const diff = startX - currentX;
+    
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        nextBannerSlide();
+      } else {
+        prevBannerSlide();
+      }
+      isDragging = false;
+    }
+  });
+  
+  track.addEventListener('touchend', () => {
+    isDragging = false;
+    startBannerAutoSlide();
+  });
+}
+
+// FIXED: Navigation from user info to payment page
+document.getElementById('toPayment').addEventListener('click', function() {
+  // Validate user info form
+  const fullname = document.getElementById('fullname').value;
+  const mobile = document.getElementById('mobile').value;
+  const pincode = document.getElementById('pincode').value;
+  const city = document.getElementById('city').value;
+  const state = document.getElementById('state').value;
+  const house = document.getElementById('house').value;
+  
+  if (!fullname || !mobile || !pincode || !city || !state || !house) {
+    showToast('Please fill all required fields', 'error');
+    return;
+  }
+  
+  if (mobile.length !== 10 || !/^\d+$/.test(mobile)) {
+    showToast('Please enter a valid 10-digit mobile number', 'error');
+    return;
+  }
+  
+  // If validation passes, proceed to payment
+  showPage('paymentPage');
+  updateOrderSummary();
+});
+
+// FIXED: Language settings functionality
+document.getElementById('saveSettings').addEventListener('click', function() {
+  const language = document.getElementById('languageSelect').value;
+  const darkMode = document.getElementById('darkModeToggle').checked;
+  
+  // Save settings to localStorage
+  localStorage.setItem('language', language);
+  localStorage.setItem('darkMode', darkMode);
+  
+  // Apply settings
+  applyLanguage(language);
+  applyDarkMode(darkMode);
+  
+  showToast('Settings saved successfully', 'success');
+});
+
+function applyLanguage(language) {
+  if (language === 'hi') {
+    // Apply Hindi translations
+    document.documentElement.lang = 'hi';
+    // Add your Hindi translations here
+    document.querySelector('title').textContent = 'Buyzocart Shop - सर्वोत्तम डील और उत्पाद';
+  } else {
+    // Apply English (default)
+    document.documentElement.lang = 'en';
+    document.querySelector('title').textContent = 'Buyzocart Shop - Best Deals & Products';
+  }
+}
+
+// FIXED: Load product images properly
+function loadProductImages() {
+  const productCards = document.querySelectorAll('.product-card');
+  productCards.forEach(card => {
+    const img = card.querySelector('img');
+    if (img && !img.src) {
+      // Set placeholder or load actual image from Firebase
+      img.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e';
+      img.alt = 'Product Image';
+    }
+  });
+}
+
+// FIXED: Initialize all functionality when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize components
+  initBannerCarousel();
+  handleProductLinks();
+  loadProductImages();
+  
+  // Load saved settings
+  const savedLanguage = localStorage.getItem('language') || 'en';
+  const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+  
+  document.getElementById('languageSelect').value = savedLanguage;
+  document.getElementById('darkModeToggle').checked = savedDarkMode;
+  
+  applyLanguage(savedLanguage);
+  applyDarkMode(savedDarkMode);
+  
+  // Set up authentication state observer
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      handleAuthSuccess(user);
+    }
+  });
+});
+
+// FIXED: Toast notification function
+function showToast(message, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast show ' + type;
+  
+  setTimeout(() => {
+    toast.className = 'toast';
+  }, 3000);
+}
+
+// FIXED: Hide login modal function
+function hideLoginModal() {
+  document.getElementById('authModal').style.display = 'none';
+}
+
+// FIXED: Show page function
+function showPage(pageId) {
+  // Hide all pages
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(page => {
+    page.classList.remove('active');
+  });
+  
+  // Show selected page
+  document.getElementById(pageId).classList.add('active');
+  
+  // Load specific page data
+  if (pageId === 'accountPage') {
+    loadUserAccountData();
+  } else if (pageId === 'wishlistPage') {
+    loadWishlistItems();
+  }
+}
+
+// Add other necessary functions here...
+
+// Initialize when window loads
+window.addEventListener('load', function() {
+  console.log('Buyzocart Shop initialized successfully');
+});
+</script>
+
+</body>
 </html>
+[file content end]
