@@ -31,6 +31,8 @@ let wishlist = [];
 let recentlyViewed = [];
 let currentImageIndex = 0;
 let currentZoomLevel = 1;
+let currentLanguage = 'en';
+let currentCurrency = 'INR';
 
 // Amazon/Flipkart Gallery Variables
 let fkCurrentSlide = 0;
@@ -145,6 +147,20 @@ function initApp() {
     if (darkModeToggle) darkModeToggle.checked = true;
   }
   
+  // Load saved language and currency
+  const savedLanguage = localStorage.getItem('language') || 'en';
+  const savedCurrency = localStorage.getItem('currency') || 'INR';
+  currentLanguage = savedLanguage;
+  currentCurrency = savedCurrency;
+  
+  // Apply saved language
+  if (savedLanguage === 'hi') {
+    applyHindiLanguage();
+  }
+  
+  // Apply saved currency
+  applyCurrency(savedCurrency);
+  
   // Show home page by default
   showPage('homePage');
 }
@@ -185,13 +201,8 @@ function setupEventListeners() {
   });
   resetPasswordBtn.addEventListener('click', handleResetPassword);
   
-  // User profile dropdown
-  userProfile.addEventListener('click', toggleAccountDropdown);
-  document.addEventListener('click', (e) => {
-    if (!userProfile.contains(e.target)) {
-      accountDropdown.classList.remove('active');
-    }
-  });
+  // User profile dropdown - FIXED: Open account page instead of dropdown
+  userProfile.addEventListener('click', () => checkAuthAndShowPage('accountPage'));
   
   // Navigation
   openMyOrdersTop.addEventListener('click', () => checkAuthAndShowPage('myOrdersPage'));
@@ -261,10 +272,10 @@ function setupEventListeners() {
   const applyPriceFilter = document.getElementById('applyPriceFilter');
   const resetPriceFilter = document.getElementById('resetPriceFilter');
   if (applyPriceFilter) {
-    applyPriceFilter.addEventListener('click', applyPriceFilter);
+    applyPriceFilter.addEventListener('click', applyPriceFilterFunction);
   }
   if (resetPriceFilter) {
-    resetPriceFilter.addEventListener('click', resetPriceFilter);
+    resetPriceFilter.addEventListener('click', resetPriceFilterFunction);
   }
   
   // Newsletter
@@ -284,7 +295,7 @@ function setupEventListeners() {
   // Copy share link
   const copyShareLink = document.getElementById('copyShareLink');
   if (copyShareLink) {
-    copyShareLink.addEventListener('click', copyShareLink);
+    copyShareLink.addEventListener('click', copyShareLinkFunction);
   }
   
   // Product detail buttons
@@ -297,23 +308,23 @@ function setupEventListeners() {
     detailWishlistBtn.addEventListener('click', toggleWishlistFromDetail);
   }
   
-  // Account page
+  // Account page - FIXED: Use unique function names
   const saveProfile = document.getElementById('saveProfile');
   const changePasswordBtn = document.getElementById('changePasswordBtn');
   const deleteAccountBtn = document.getElementById('deleteAccountBtn');
   const saveSettings = document.getElementById('saveSettings');
   
   if (saveProfile) {
-    saveProfile.addEventListener('click', saveProfile);
+    saveProfile.addEventListener('click', saveProfileFunction);
   }
   if (changePasswordBtn) {
-    changePasswordBtn.addEventListener('click', changePassword);
+    changePasswordBtn.addEventListener('click', changePasswordFunction);
   }
   if (deleteAccountBtn) {
-    deleteAccountBtn.addEventListener('click', deleteAccount);
+    deleteAccountBtn.addEventListener('click', deleteAccountFunction);
   }
   if (saveSettings) {
-    saveSettings.addEventListener('click', saveSettings);
+    saveSettings.addEventListener('click', saveSettingsFunction);
   }
   
   // Address page
@@ -328,7 +339,7 @@ function setupEventListeners() {
     cancelAddAddress.addEventListener('click', hideNewAddressForm);
   }
   if (saveAddress) {
-    saveAddress.addEventListener('click', saveAddress);
+    saveAddress.addEventListener('click', saveAddressFunction);
   }
   
   // Dark mode toggle in settings
@@ -671,13 +682,19 @@ async function handleLogin() {
     // Clear form
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
+    
+    // Update UI
+    currentUser = userCredential.user;
+    updateUIForUser(currentUser);
+    loadUserData(currentUser);
+    
   } catch (err) {
     console.error('Login error:', err);
     // Display error in the form, not as popup
     if (loginError) loginError.textContent = err.message;
   } finally {
     loginBtn.disabled = false;
-    loginBtn.textContent = 'Login';
+    loginBtn.textContent = currentLanguage === 'hi' ? 'लॉग इन' : 'Login';
   }
 }
 
@@ -720,13 +737,19 @@ async function handleSignup() {
     document.getElementById('signupName').value = '';
     document.getElementById('signupEmail').value = '';
     document.getElementById('signupPassword').value = '';
+    
+    // Update UI
+    currentUser = user;
+    updateUIForUser(currentUser);
+    loadUserData(currentUser);
+    
   } catch (err) {
     console.error('Signup error:', err);
     // Display error in the form, not as popup
     if (signupError) signupError.textContent = err.message;
   } finally {
     signupBtn.disabled = false;
-    signupBtn.textContent = 'Sign Up';
+    signupBtn.textContent = currentLanguage === 'hi' ? 'साइन अप' : 'Sign Up';
   }
 }
 
@@ -751,6 +774,12 @@ async function handleGoogleLogin() {
     
     showToast('Login successful!', 'success');
     authModal.classList.remove('active');
+    
+    // Update UI
+    currentUser = user;
+    updateUIForUser(currentUser);
+    loadUserData(currentUser);
+    
   } catch (err) {
     console.error('Google login error:', err);
     // Display error in appropriate form
@@ -786,7 +815,7 @@ async function handleResetPassword() {
     showToast(err.message, 'error');
   } finally {
     resetPasswordBtn.disabled = false;
-    resetPasswordBtn.textContent = 'Reset Password';
+    resetPasswordBtn.textContent = currentLanguage === 'hi' ? 'पासवर्ड रीसेट करें' : 'Reset Password';
   }
 }
 
@@ -1004,12 +1033,6 @@ function updateUIForGuest() {
   if (mobileLoginBtn) mobileLoginBtn.style.display = 'flex';
   if (mobileUserProfile) mobileUserProfile.style.display = 'none';
   if (accountDropdown) accountDropdown.classList.remove('active');
-}
-
-function toggleAccountDropdown() {
-  if (accountDropdown) {
-    accountDropdown.classList.toggle('active');
-  }
 }
 
 // Data loading functions
@@ -1273,10 +1296,10 @@ function showProductDetail(product) {
   const wishlistBtn = document.getElementById('detailWishlistBtn');
   if (wishlistBtn) {
     if (wishlist.includes(product.id)) {
-      wishlistBtn.textContent = 'Remove from Wishlist';
+      wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट से हटाएं' : 'Remove from Wishlist';
       wishlistBtn.classList.add('active');
     } else {
-      wishlistBtn.textContent = 'Add to Wishlist';
+      wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट में जोड़ें' : 'Add to Wishlist';
       wishlistBtn.classList.remove('active');
     }
   }
@@ -1391,13 +1414,13 @@ async function toggleWishlist(productId) {
       });
       
       wishlist.push(productId);
-      showToast('Added to wishlist', 'success');
+      showToast(currentLanguage === 'hi' ? 'विशलिस्ट में जोड़ा गया' : 'Added to wishlist', 'success');
     } else {
       // Remove from wishlist
       await snapshot.docs[0].ref.delete();
       
       wishlist = wishlist.filter(id => id !== productId);
-      showToast('Removed from wishlist', 'success');
+      showToast(currentLanguage === 'hi' ? 'विशलिस्ट से हटाया गया' : 'Removed from wishlist', 'success');
     }
     
     updateWishlistButtons();
@@ -1408,10 +1431,10 @@ async function toggleWishlist(productId) {
       const wishlistBtn = document.getElementById('detailWishlistBtn');
       if (wishlistBtn) {
         if (wishlist.includes(productId)) {
-          wishlistBtn.textContent = 'Remove from Wishlist';
+          wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट से हटाएं' : 'Remove from Wishlist';
           wishlistBtn.classList.add('active');
         } else {
-          wishlistBtn.textContent = 'Add to Wishlist';
+          wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट में जोड़ें' : 'Add to Wishlist';
           wishlistBtn.classList.remove('active');
         }
       }
@@ -1423,7 +1446,7 @@ async function toggleWishlist(productId) {
     }
   } catch (error) {
     console.error('Error updating wishlist:', error);
-    showToast('Failed to update wishlist', 'error');
+    showToast(currentLanguage === 'hi' ? 'विशलिस्ट अपडेट करने में विफल' : 'Failed to update wishlist', 'error');
   }
 }
 
@@ -1594,8 +1617,8 @@ function filterByCategory(categoryId) {
   });
 }
 
-// Price filter functions
-function applyPriceFilter() {
+// Price filter functions - FIXED: Renamed to avoid conflicts
+function applyPriceFilterFunction() {
   const minPriceInput = document.getElementById('minPrice');
   const maxPriceInput = document.getElementById('maxPrice');
   
@@ -1612,7 +1635,7 @@ function applyPriceFilter() {
   renderProducts(filteredProducts, 'productGrid');
 }
 
-function resetPriceFilter() {
+function resetPriceFilterFunction() {
   const minPrice = document.getElementById('minPrice');
   const maxPrice = document.getElementById('maxPrice');
   const minPriceSlider = document.getElementById('minPriceSlider');
@@ -1712,13 +1735,13 @@ function shareProduct(platform, product = null) {
   }
 }
 
-function copyShareLink() {
+function copyShareLinkFunction() {
   const shareLink = document.getElementById('productShareLink');
   if (!shareLink) return;
   
   shareLink.select();
   document.execCommand('copy');
-  showToast('Link copied to clipboard', 'success');
+  showToast(currentLanguage === 'hi' ? 'लिंक क्लिपबोर्ड पर कॉपी हो गया' : 'Link copied to clipboard', 'success');
 }
 
 // Image zoom functions
@@ -1767,7 +1790,7 @@ function handleNewsletterSubscription() {
   newsletterEmail.value = '';
 }
 
-// Account functions
+// Account functions - FIXED: Renamed to avoid conflicts
 function loadAccountPage() {
   if (!currentUser) return;
   
@@ -1793,7 +1816,7 @@ function loadAccountPage() {
   });
 }
 
-function saveProfile() {
+function saveProfileFunction() {
   const profileName = document.getElementById('profileName');
   const profilePhone = document.getElementById('profilePhone');
   
@@ -1807,26 +1830,26 @@ function saveProfile() {
     phone: phone,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
-    showToast('Profile updated successfully', 'success');
+    showToast(currentLanguage === 'hi' ? 'प्रोफाइल सफलतापूर्वक अपडेट की गई' : 'Profile updated successfully', 'success');
     // Update UI
     if (userName) userName.textContent = name;
     if (mobileUserName) mobileUserName.textContent = name;
     if (userAvatar) userAvatar.textContent = name.charAt(0).toUpperCase();
   }).catch(error => {
     console.error('Error updating profile:', error);
-    showToast('Failed to update profile', 'error');
+    showToast(currentLanguage === 'hi' ? 'प्रोफाइल अपडेट करने में विफल' : 'Failed to update profile', 'error');
   });
 }
 
-function changePassword() {
+function changePasswordFunction() {
   // In a real app, you would show a modal to change password
-  showToast('Password change feature coming soon', 'info');
+  showToast(currentLanguage === 'hi' ? 'पासवर्ड बदलने की सुविधा जल्द ही आ रही है' : 'Password change feature coming soon', 'info');
 }
 
-function deleteAccount() {
-  if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+function deleteAccountFunction() {
+  if (confirm(currentLanguage === 'hi' ? 'क्या आप वाकई अपना खाता हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।' : 'Are you sure you want to delete your account? This action cannot be undone.')) {
     // In a real app, you would delete the user account
-    showToast('Account deletion feature coming soon', 'info');
+    showToast(currentLanguage === 'hi' ? 'खाता हटाने की सुविधा जल्द ही आ रही है' : 'Account deletion feature coming soon', 'info');
   }
 }
 
@@ -1852,8 +1875,8 @@ function loadSettings() {
       if (pushNotifications) pushNotifications.checked = settings.pushNotifications || false;
       if (personalizedRecs) personalizedRecs.checked = settings.personalizedRecs || false;
       if (dataSharing) dataSharing.checked = settings.dataSharing || false;
-      if (languageSelect) languageSelect.value = settings.language || 'en';
-      if (currencySelect) currencySelect.value = settings.currency || 'INR';
+      if (languageSelect) languageSelect.value = settings.language || currentLanguage;
+      if (currencySelect) currencySelect.value = settings.currency || currentCurrency;
       if (darkModeToggle) {
         darkModeToggle.checked = document.documentElement.getAttribute('data-theme') === 'dark';
       }
@@ -1863,7 +1886,7 @@ function loadSettings() {
   });
 }
 
-function saveSettings() {
+function saveSettingsFunction() {
   const emailNotifications = document.getElementById('emailNotifications');
   const smsNotifications = document.getElementById('smsNotifications');
   const pushNotifications = document.getElementById('pushNotifications');
@@ -1895,37 +1918,141 @@ function saveSettings() {
     },
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
-    showToast('Settings saved successfully', 'success');
+    showToast(currentLanguage === 'hi' ? 'सेटिंग्स सफलतापूर्वक सहेजी गईं' : 'Settings saved successfully', 'success');
     
-    // Apply language change if Hindi is selected
-    if (languageValue === 'hi') {
-      applyHindiLanguage();
+    // Apply language change
+    if (languageValue !== currentLanguage) {
+      currentLanguage = languageValue;
+      localStorage.setItem('language', languageValue);
+      if (languageValue === 'hi') {
+        applyHindiLanguage();
+      } else {
+        applyEnglishLanguage();
+      }
     }
+    
+    // Apply currency change
+    if (currencyValue !== currentCurrency) {
+      currentCurrency = currencyValue;
+      localStorage.setItem('currency', currencyValue);
+      applyCurrency(currencyValue);
+    }
+    
   }).catch(error => {
     console.error('Error saving settings:', error);
-    showToast('Failed to save settings', 'error');
+    showToast(currentLanguage === 'hi' ? 'सेटिंग्स सहेजने में विफल' : 'Failed to save settings', 'error');
   });
 }
 
 // Language functions
 function applyHindiLanguage() {
-  // This is a simplified example - in a real app, you would have a full translation system
-  const elementsToTranslate = {
-    'homePage h1': 'बुयज़ो कार्ट में आपका स्वागत है',
-    'homePage p': 'साफ, तेज चेकआउट। हाथ से चुने गए उत्पाद। पूरी तरह से उत्तरदायी यूआई।',
+  // Update all text elements to Hindi
+  const translations = {
+    // Navigation
+    'openLoginTop': 'लॉग इन',
+    'openMyOrdersTop': 'मेरे आर्डर',
+    'openContactTop': 'संपर्क करें',
+    'mobileLoginBtn': 'लॉग इन',
+    
+    // Auth Modal
+    'loginTab': 'लॉग इन',
+    'signupTab': 'साइन अप',
+    'switchToLogin': 'पहले से ही एक खाता है? लॉग इन करें',
+    'forgotPasswordLink': 'पासवर्ड भूल गए?',
+    'backToLogin': 'लॉग इन पर वापस जाएं',
+    'resetPasswordBtn': 'पासवर्ड रीसेट करें',
+    
+    // Forms
+    'loginEmail': 'ईमेल',
+    'loginPassword': 'पासवर्ड',
+    'loginBtn': 'लॉग इन',
+    'signupName': 'पूरा नाम',
+    'signupEmail': 'ईमेल',
+    'signupPassword': 'पासवर्ड',
+    'signupBtn': 'साइन अप',
+    'forgotPasswordEmail': 'ईमेल',
+    
+    // Home Page
+    'heroTitle': 'बुयज़ो कार्ट में आपका स्वागत है',
+    'heroSubtitle': 'साफ, तेज चेकआउट। हाथ से चुने गए उत्पाद। पूरी तरह से उत्तरदायी यूआई।',
+    'homeSearchInput': 'उत्पाद खोजें...',
+    
+    // Products Page
     'productsPage h2': 'सभी उत्पाद',
-    // Add more translations as needed
+    
+    // Account Page
+    'accountPage h2': 'मेरा खाता',
+    'saveProfile': 'प्रोफाइल सहेजें',
+    'changePasswordBtn': 'पासवर्ड बदलें',
+    'deleteAccountBtn': 'खाता हटाएं',
+    
+    // Settings Page
+    'settingsPage h2': 'सेटिंग्स',
+    'saveSettings': 'सेटिंग्स सहेजें',
+    
+    // And many more translations...
   };
 
-  // Apply translations
-  for (const selector in elementsToTranslate) {
-    const element = document.querySelector(selector);
+  // Apply translations to elements
+  for (const [id, text] of Object.entries(translations)) {
+    const element = document.getElementById(id);
     if (element) {
-      element.textContent = elementsToTranslate[selector];
+      element.textContent = text;
     }
   }
 
+  // Update placeholders
+  const emailInputs = document.querySelectorAll('input[type="email"]');
+  emailInputs.forEach(input => {
+    if (input.placeholder.includes('Email')) {
+      input.placeholder = 'ईमेल';
+    }
+  });
+
+  const passwordInputs = document.querySelectorAll('input[type="password"]');
+  passwordInputs.forEach(input => {
+    if (input.placeholder.includes('Password')) {
+      input.placeholder = 'पासवर्ड';
+    }
+  });
+
   showToast('भाषा हिंदी में बदल गई', 'success');
+}
+
+function applyEnglishLanguage() {
+  // Reset all text to English (this would be more comprehensive in a real app)
+  showToast('Language changed to English', 'success');
+}
+
+// Currency functions
+function applyCurrency(currency) {
+  // This is a simplified example - in a real app, you would convert all prices
+  const exchangeRates = {
+    'INR': 1,
+    'USD': 0.012,
+    'EUR': 0.011
+  };
+  
+  const symbols = {
+    'INR': '₹',
+    'USD': '$',
+    'EUR': '€'
+  };
+  
+  const rate = exchangeRates[currency] || 1;
+  const symbol = symbols[currency] || '₹';
+  
+  // Update all price displays
+  document.querySelectorAll('.product-card-current-price, .product-card-original-price, .slider-item-price').forEach(element => {
+    const currentText = element.textContent;
+    if (currentText.includes('₹')) {
+      const price = parseFloat(currentText.replace('₹', '').replace(',', ''));
+      const convertedPrice = price * rate;
+      element.textContent = `${symbol}${convertedPrice.toFixed(2)}`;
+    }
+  });
+  
+  showToast(`Currency changed to ${currency}`, 'success');
 }
 
 // Address functions
@@ -1943,7 +2070,7 @@ function hideNewAddressForm() {
   }
 }
 
-function saveAddress() {
+function saveAddressFunction() {
   const addressName = document.getElementById('addressName');
   const addressMobile = document.getElementById('addressMobile');
   const addressPincode = document.getElementById('addressPincode');
