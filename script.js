@@ -1,24 +1,3 @@
-// Firebase Configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAeB7VzIxJaNYagUPoKd-kN5HXmLbS2-Vw",
-  authDomain: "videomanager-23d98.firebaseapp.com",
-  databaseURL: "https://videomanager-23d98-default-rtdb.firebaseio.com",
-  projectId: "videomanager-23d98",
-  storageBucket: "videomanager-23d98.firebasestorage.app",
-  messagingSenderId: "847321523576",
-  appId: "1:847321523576:web:bda3f5026e3e163603548d",
-  measurementId: "G-YBSJ1KMPV4"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const realtimeDb = firebase.database();
-
-// Initialize EmailJS
-emailjs.init("user_your_emailjs_user_id_here");
-
 // Global variables
 let currentUser = null;
 let currentProduct = null;
@@ -31,8 +10,6 @@ let wishlist = [];
 let recentlyViewed = [];
 let currentImageIndex = 0;
 let currentZoomLevel = 1;
-let currentLanguage = 'en';
-let currentCurrency = 'INR';
 
 // Amazon/Flipkart Gallery Variables
 let fkCurrentSlide = 0;
@@ -136,6 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
       updateUIForGuest();
     }
   });
+
+  // Check for product ID in URL for sharing
+  checkUrlForProduct();
 });
 
 function initApp() {
@@ -146,20 +126,6 @@ function initApp() {
     const darkModeToggle = document.getElementById('darkModeToggle');
     if (darkModeToggle) darkModeToggle.checked = true;
   }
-  
-  // Load saved language and currency
-  const savedLanguage = localStorage.getItem('language') || 'en';
-  const savedCurrency = localStorage.getItem('currency') || 'INR';
-  currentLanguage = savedLanguage;
-  currentCurrency = savedCurrency;
-  
-  // Apply saved language
-  if (savedLanguage === 'hi') {
-    applyHindiLanguage();
-  }
-  
-  // Apply saved currency
-  applyCurrency(savedCurrency);
   
   // Show home page by default
   showPage('homePage');
@@ -201,8 +167,13 @@ function setupEventListeners() {
   });
   resetPasswordBtn.addEventListener('click', handleResetPassword);
   
-  // User profile dropdown - FIXED: Open account page instead of dropdown
-  userProfile.addEventListener('click', () => checkAuthAndShowPage('accountPage'));
+  // User profile dropdown
+  userProfile.addEventListener('click', toggleAccountDropdown);
+  document.addEventListener('click', (e) => {
+    if (!userProfile.contains(e.target)) {
+      accountDropdown.classList.remove('active');
+    }
+  });
   
   // Navigation
   openMyOrdersTop.addEventListener('click', () => checkAuthAndShowPage('myOrdersPage'));
@@ -226,63 +197,36 @@ function setupEventListeners() {
     homeSearchInput.addEventListener('input', handleHomeSearch);
   }
   
-  // Order flow buttons - FIXED: Use event delegation for dynamically created elements
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.id === 'backToProducts') {
-      showPage('productsPage');
-    } else if (e.target && e.target.id === 'toUserInfo') {
-      toUserInfo();
-    } else if (e.target && e.target.id === 'editOrder') {
-      showPage('orderPage');
-    } else if (e.target && e.target.id === 'toPayment') {
-      toPayment();
-    } else if (e.target && e.target.id === 'payBack') {
-      showPage('userPage');
-    } else if (e.target && e.target.id === 'confirmOrder') {
-      confirmOrder();
-    } else if (e.target && e.target.id === 'goHome') {
-      showPage('homePage');
-    } else if (e.target && e.target.id === 'viewOrders') {
-      checkAuthAndShowPage('myOrdersPage');
-    } else if (e.target && e.target.id === 'saveUserInfo') {
-      saveUserInfo();
-    }
-  });
+  // Order flow buttons
+  document.getElementById('backToProducts')?.addEventListener('click', () => showPage('productsPage'));
+  document.getElementById('toUserInfo')?.addEventListener('click', toUserInfo);
+  document.getElementById('editOrder')?.addEventListener('click', () => showPage('orderPage'));
+  document.getElementById('toPayment')?.addEventListener('click', toPayment);
+  document.getElementById('payBack')?.addEventListener('click', () => showPage('userPage'));
+  document.getElementById('confirmOrder')?.addEventListener('click', confirmOrder);
+  document.getElementById('goHome')?.addEventListener('click', () => showPage('homePage'));
+  document.getElementById('viewOrders')?.addEventListener('click', () => checkAuthAndShowPage('myOrdersPage'));
   
   // Quantity controls
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.classList.contains('qty-minus')) {
-      decreaseQuantity();
-    } else if (e.target && e.target.classList.contains('qty-plus')) {
-      increaseQuantity();
-    }
-  });
+  document.querySelector('.qty-minus')?.addEventListener('click', decreaseQuantity);
+  document.querySelector('.qty-plus')?.addEventListener('click', increaseQuantity);
   
   // Size selection
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.classList.contains('size-option')) {
+  document.querySelectorAll('.size-option').forEach(option => {
+    option.addEventListener('click', function() {
       document.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
-      e.target.classList.add('selected');
+      this.classList.add('selected');
       const sizeValidationError = document.getElementById('sizeValidationError');
       if (sizeValidationError) sizeValidationError.classList.remove('show');
-    }
+    });
   });
   
   // Price filter
-  const applyPriceFilter = document.getElementById('applyPriceFilter');
-  const resetPriceFilter = document.getElementById('resetPriceFilter');
-  if (applyPriceFilter) {
-    applyPriceFilter.addEventListener('click', applyPriceFilterFunction);
-  }
-  if (resetPriceFilter) {
-    resetPriceFilter.addEventListener('click', resetPriceFilterFunction);
-  }
+  document.getElementById('applyPriceFilter')?.addEventListener('click', applyPriceFilter);
+  document.getElementById('resetPriceFilter')?.addEventListener('click', resetPriceFilter);
   
   // Newsletter
-  const subscribeBtn = document.getElementById('subscribeBtn');
-  if (subscribeBtn) {
-    subscribeBtn.addEventListener('click', handleNewsletterSubscription);
-  }
+  document.getElementById('subscribeBtn')?.addEventListener('click', handleNewsletterSubscription);
   
   // Share buttons
   document.querySelectorAll('.share-btn').forEach(btn => {
@@ -293,69 +237,39 @@ function setupEventListeners() {
   });
   
   // Copy share link
-  const copyShareLink = document.getElementById('copyShareLink');
-  if (copyShareLink) {
-    copyShareLink.addEventListener('click', copyShareLinkFunction);
-  }
+  document.getElementById('copyShareLink')?.addEventListener('click', copyShareLink);
   
   // Product detail buttons
-  const detailOrderBtn = document.getElementById('detailOrderBtn');
-  const detailWishlistBtn = document.getElementById('detailWishlistBtn');
-  if (detailOrderBtn) {
-    detailOrderBtn.addEventListener('click', orderProductFromDetail);
-  }
-  if (detailWishlistBtn) {
-    detailWishlistBtn.addEventListener('click', toggleWishlistFromDetail);
-  }
+  document.getElementById('detailOrderBtn')?.addEventListener('click', orderProductFromDetail);
+  document.getElementById('detailWishlistBtn')?.addEventListener('click', toggleWishlistFromDetail);
   
-  // Account page - FIXED: Use unique function names
-  const saveProfile = document.getElementById('saveProfile');
-  const changePasswordBtn = document.getElementById('changePasswordBtn');
-  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-  const saveSettings = document.getElementById('saveSettings');
-  
-  if (saveProfile) {
-    saveProfile.addEventListener('click', saveProfileFunction);
-  }
-  if (changePasswordBtn) {
-    changePasswordBtn.addEventListener('click', changePasswordFunction);
-  }
-  if (deleteAccountBtn) {
-    deleteAccountBtn.addEventListener('click', deleteAccountFunction);
-  }
-  if (saveSettings) {
-    saveSettings.addEventListener('click', saveSettingsFunction);
-  }
+  // Account page
+  document.getElementById('saveProfile')?.addEventListener('click', saveProfile);
+  document.getElementById('changePasswordBtn')?.addEventListener('click', changePassword);
+  document.getElementById('deleteAccountBtn')?.addEventListener('click', deleteAccount);
+  document.getElementById('saveSettings')?.addEventListener('click', saveSettings);
   
   // Address page
-  const addNewAddress = document.getElementById('addNewAddress');
-  const cancelAddAddress = document.getElementById('cancelAddAddress');
-  const saveAddress = document.getElementById('saveAddress');
-  
-  if (addNewAddress) {
-    addNewAddress.addEventListener('click', showNewAddressForm);
-  }
-  if (cancelAddAddress) {
-    cancelAddAddress.addEventListener('click', hideNewAddressForm);
-  }
-  if (saveAddress) {
-    saveAddress.addEventListener('click', saveAddressFunction);
-  }
+  document.getElementById('addNewAddress')?.addEventListener('click', showNewAddressForm);
+  document.getElementById('cancelAddAddress')?.addEventListener('click', hideNewAddressForm);
+  document.getElementById('saveAddress')?.addEventListener('click', saveAddress);
   
   // Dark mode toggle in settings
-  const darkModeToggle = document.getElementById('darkModeToggle');
-  if (darkModeToggle) {
-    darkModeToggle.addEventListener('change', function() {
-      toggleTheme();
-    });
-  }
+  document.getElementById('darkModeToggle')?.addEventListener('change', function() {
+    toggleTheme();
+  });
+
+  // Language change in settings
+  document.getElementById('languageSelect')?.addEventListener('change', function() {
+    changeLanguage(this.value);
+  });
 
   // Amazon/Flipkart Gallery Event Listeners
-  if (fkPrevBtn) fkPrevBtn.addEventListener('click', fkPrevSlide);
-  if (fkNextBtn) fkNextBtn.addEventListener('click', fkNextSlide);
-  if (fkAddToCart) fkAddToCart.addEventListener('click', fkHandleAddToCart);
-  if (fkBuyNow) fkBuyNow.addEventListener('click', fkHandleBuyNow);
-  if (fkZoomClose) fkZoomClose.addEventListener('click', () => fkZoomModal.classList.remove('active'));
+  fkPrevBtn?.addEventListener('click', fkPrevSlide);
+  fkNextBtn?.addEventListener('click', fkNextSlide);
+  fkAddToCart?.addEventListener('click', fkHandleAddToCart);
+  fkBuyNow?.addEventListener('click', fkHandleBuyNow);
+  fkZoomClose?.addEventListener('click', () => fkZoomModal.classList.remove('active'));
 
   // Touch events for swipe
   if (fkGalleryMain) {
@@ -364,12 +278,19 @@ function setupEventListeners() {
     fkGalleryMain.addEventListener('touchend', fkTouchEnd);
   }
 
+  // Banner touch events
+  const bannerCarousel = document.getElementById('bannerCarousel');
+  if (bannerCarousel) {
+    bannerCarousel.addEventListener('touchstart', bannerTouchStart);
+    bannerCarousel.addEventListener('touchmove', bannerTouchMove);
+    bannerCarousel.addEventListener('touchend', bannerTouchEnd);
+  }
+
   // Show sticky buttons when product detail page is active
   const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-        const productDetailPage = document.getElementById('productDetailPage');
-        if (productDetailPage && productDetailPage.classList.contains('active')) {
+        if (document.getElementById('productDetailPage').classList.contains('active')) {
           fkStickyButtons.classList.add('show');
         } else {
           fkStickyButtons.classList.remove('show');
@@ -378,13 +299,10 @@ function setupEventListeners() {
     });
   });
 
-  const productDetailPage = document.getElementById('productDetailPage');
-  if (productDetailPage) {
-    observer.observe(productDetailPage, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-  }
+  observer.observe(document.getElementById('productDetailPage'), {
+    attributes: true,
+    attributeFilter: ['class']
+  });
 }
 
 // NEW: Load products from Realtime Database
@@ -515,7 +433,7 @@ function loadUserOrdersFromRealtimeDB(userId) {
 
 // Amazon/Flipkart Gallery Functions
 function fkInitGallery(product) {
-  if (!product || !fkGalleryTrack || !fkGalleryDots || !fkGalleryThumbs) return;
+  if (!product) return;
 
   // Clear existing gallery
   fkGalleryTrack.innerHTML = '';
@@ -523,7 +441,7 @@ function fkInitGallery(product) {
   fkGalleryThumbs.innerHTML = '';
 
   // Get images from product - Firebase path: /products/{productId}/images[]
-  fkImages = product.images && product.images.length > 0 ? product.images : [product.image || 'https://via.placeholder.com/400'];
+  fkImages = product.images && product.images.length > 0 ? product.images : [product.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'];
 
   // Create slides
   fkImages.forEach((image, index) => {
@@ -589,18 +507,16 @@ function fkGoToSlide(index) {
 }
 
 function fkOpenZoom(imageUrl) {
-  if (!fkZoomModal || !fkZoomImage) return;
-  
   fkZoomImage.src = imageUrl;
   fkZoomModal.classList.add('active');
 }
 
-// Touch swipe functionality
+// Touch swipe functionality for product gallery
 function fkTouchStart(event) {
   fkIsDragging = true;
   fkStartPos = getPositionX(event);
   fkAnimationID = requestAnimationFrame(fkAnimation);
-  if (fkGalleryMain) fkGalleryMain.style.cursor = 'grabbing';
+  fkGalleryTrack.style.cursor = 'grabbing';
 }
 
 function fkTouchMove(event) {
@@ -624,19 +540,15 @@ function fkTouchEnd() {
   }
 
   fkSetPositionByIndex();
-  if (fkGalleryMain) fkGalleryMain.style.cursor = 'grab';
+  fkGalleryTrack.style.cursor = 'grab';
 }
 
 function fkAnimation() {
-  if (!fkGalleryTrack) return;
-  
   fkGalleryTrack.style.transform = `translateX(${fkCurrentTranslate}px)`;
   if (fkIsDragging) requestAnimationFrame(fkAnimation);
 }
 
 function fkSetPositionByIndex() {
-  if (!fkGalleryMain) return;
-  
   fkCurrentTranslate = fkCurrentSlide * -fkGalleryMain.offsetWidth;
   fkPrevTranslate = fkCurrentTranslate;
   fkUpdateGallery();
@@ -644,6 +556,39 @@ function fkSetPositionByIndex() {
 
 function getPositionX(event) {
   return event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
+}
+
+// Banner touch functionality
+let bannerStartX = 0;
+let bannerCurrentX = 0;
+let bannerIsDragging = false;
+
+function bannerTouchStart(event) {
+  bannerIsDragging = true;
+  bannerStartX = event.touches[0].clientX;
+}
+
+function bannerTouchMove(event) {
+  if (!bannerIsDragging) return;
+  bannerCurrentX = event.touches[0].clientX;
+}
+
+function bannerTouchEnd() {
+  if (!bannerIsDragging) return;
+  
+  const diff = bannerStartX - bannerCurrentX;
+  const bannerDots = document.querySelectorAll('.banner-dot');
+  const activeIndex = Array.from(bannerDots).findIndex(dot => dot.classList.contains('active'));
+  
+  if (diff > 50 && activeIndex < bannerDots.length - 1) {
+    // Swipe left - next slide
+    setBannerSlide(activeIndex + 1);
+  } else if (diff < -50 && activeIndex > 0) {
+    // Swipe right - previous slide
+    setBannerSlide(activeIndex - 1);
+  }
+  
+  bannerIsDragging = false;
 }
 
 // Sticky button handlers
@@ -664,10 +609,10 @@ async function handleLogin() {
   const password = document.getElementById('loginPassword').value;
   
   // Clear previous errors
-  if (loginError) loginError.textContent = '';
+  loginError.textContent = '';
   
   if (!email || !password) {
-    if (loginError) loginError.textContent = 'Please fill in all fields';
+    loginError.textContent = 'Please fill in all fields';
     return;
   }
   
@@ -682,19 +627,13 @@ async function handleLogin() {
     // Clear form
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
-    
-    // Update UI
-    currentUser = userCredential.user;
-    updateUIForUser(currentUser);
-    loadUserData(currentUser);
-    
   } catch (err) {
     console.error('Login error:', err);
     // Display error in the form, not as popup
-    if (loginError) loginError.textContent = err.message;
+    loginError.textContent = err.message;
   } finally {
     loginBtn.disabled = false;
-    loginBtn.textContent = currentLanguage === 'hi' ? 'लॉग इन' : 'Login';
+    loginBtn.textContent = 'Login';
   }
 }
 
@@ -704,15 +643,15 @@ async function handleSignup() {
   const password = document.getElementById('signupPassword').value;
   
   // Clear previous errors
-  if (signupError) signupError.textContent = '';
+  signupError.textContent = '';
   
   if (!name || !email || !password) {
-    if (signupError) signupError.textContent = 'Please fill in all fields';
+    signupError.textContent = 'Please fill in all fields';
     return;
   }
   
   if (password.length < 6) {
-    if (signupError) signupError.textContent = 'Password should be at least 6 characters';
+    signupError.textContent = 'Password should be at least 6 characters';
     return;
   }
   
@@ -737,19 +676,13 @@ async function handleSignup() {
     document.getElementById('signupName').value = '';
     document.getElementById('signupEmail').value = '';
     document.getElementById('signupPassword').value = '';
-    
-    // Update UI
-    currentUser = user;
-    updateUIForUser(currentUser);
-    loadUserData(currentUser);
-    
   } catch (err) {
     console.error('Signup error:', err);
     // Display error in the form, not as popup
-    if (signupError) signupError.textContent = err.message;
+    signupError.textContent = err.message;
   } finally {
     signupBtn.disabled = false;
-    signupBtn.textContent = currentLanguage === 'hi' ? 'साइन अप' : 'Sign Up';
+    signupBtn.textContent = 'Sign Up';
   }
 }
 
@@ -774,19 +707,13 @@ async function handleGoogleLogin() {
     
     showToast('Login successful!', 'success');
     authModal.classList.remove('active');
-    
-    // Update UI
-    currentUser = user;
-    updateUIForUser(currentUser);
-    loadUserData(currentUser);
-    
   } catch (err) {
     console.error('Google login error:', err);
     // Display error in appropriate form
     if (loginForm.classList.contains('active')) {
-      if (loginError) loginError.textContent = err.message;
+      loginError.textContent = err.message;
     } else {
-      if (signupError) signupError.textContent = err.message;
+      signupError.textContent = err.message;
     }
   }
 }
@@ -815,7 +742,7 @@ async function handleResetPassword() {
     showToast(err.message, 'error');
   } finally {
     resetPasswordBtn.disabled = false;
-    resetPasswordBtn.textContent = currentLanguage === 'hi' ? 'पासवर्ड रीसेट करें' : 'Reset Password';
+    resetPasswordBtn.textContent = 'Reset Password';
   }
 }
 
@@ -883,29 +810,22 @@ function showPage(pageId) {
   document.querySelectorAll('.page').forEach(page => {
     page.classList.remove('active');
   });
-  const pageElement = document.getElementById(pageId);
-  if (pageElement) {
-    pageElement.classList.add('active');
-  }
+  document.getElementById(pageId).classList.add('active');
   
   // Update step pills based on current page
   updateStepPills();
   
-  // Scroll to top
-  window.scrollTo(0, 0);
-  
-  // Load specific page data
-  if (pageId === 'accountPage') {
-    loadAccountPage();
-  } else if (pageId === 'settingsPage') {
-    loadSettings();
-  } else if (pageId === 'addressPage') {
-    loadAddresses();
-  } else if (pageId === 'myOrdersPage') {
+  // Load specific data for certain pages
+  if (pageId === 'myOrdersPage' && currentUser) {
     loadUserOrdersFromRealtimeDB(currentUser.uid);
   } else if (pageId === 'wishlistPage') {
     renderWishlist();
+  } else if (pageId === 'accountPage' && currentUser) {
+    updateAccountPage();
   }
+  
+  // Scroll to top
+  window.scrollTo(0, 0);
 }
 
 function checkAuthAndShowPage(pageId) {
@@ -932,8 +852,8 @@ function switchAuthTab(tab) {
   signupTab.classList.remove('active');
   
   // Clear errors
-  if (loginError) loginError.textContent = '';
-  if (signupError) signupError.textContent = '';
+  loginError.textContent = '';
+  signupError.textContent = '';
   
   if (tab === 'login') {
     loginTab.classList.add('active');
@@ -984,8 +904,6 @@ function toggleTheme() {
 
 // Toast notification
 function showToast(message, type = 'success') {
-  if (!toast) return;
-  
   toast.textContent = message;
   toast.className = 'toast ' + type;
   toast.classList.add('show');
@@ -997,42 +915,69 @@ function showToast(message, type = 'success') {
 
 // User interface updates
 function updateUIForUser(user) {
-  if (userProfile) userProfile.style.display = 'flex';
-  if (openLoginTop) openLoginTop.style.display = 'none';
-  if (mobileLoginBtn) mobileLoginBtn.style.display = 'none';
-  if (mobileUserProfile) mobileUserProfile.style.display = 'flex';
+  userProfile.style.display = 'flex';
+  openLoginTop.style.display = 'none';
+  mobileLoginBtn.style.display = 'none';
+  mobileUserProfile.style.display = 'flex';
   
   // Load user data to display
   db.collection('users').doc(user.uid).get().then(doc => {
     if (doc.exists) {
       const userData = doc.data();
-      if (userName) userName.textContent = userData.name || 'User';
-      if (mobileUserName) mobileUserName.textContent = userData.name || 'User';
-      if (accountEmail) accountEmail.textContent = user.email;
+      userName.textContent = userData.name || 'User';
+      mobileUserName.textContent = userData.name || 'User';
+      accountEmail.textContent = user.email;
       
       // Set avatar initial
       const initial = (userData.name || 'U').charAt(0).toUpperCase();
-      if (userAvatar) userAvatar.textContent = initial;
+      userAvatar.textContent = initial;
       
       // Update account page if open
-      if (document.getElementById('accountPageName')) {
-        document.getElementById('accountPageName').textContent = userData.name || 'User';
-        document.getElementById('accountPageEmail').textContent = user.email;
-        document.getElementById('accountPageAvatar').textContent = initial;
-        document.getElementById('profileName').value = userData.name || '';
-        document.getElementById('profileEmail').value = user.email;
-        document.getElementById('profilePhone').value = userData.phone || '';
-      }
+      updateAccountPage();
     }
   });
 }
 
 function updateUIForGuest() {
-  if (userProfile) userProfile.style.display = 'none';
-  if (openLoginTop) openLoginTop.style.display = 'block';
-  if (mobileLoginBtn) mobileLoginBtn.style.display = 'flex';
-  if (mobileUserProfile) mobileUserProfile.style.display = 'none';
-  if (accountDropdown) accountDropdown.classList.remove('active');
+  userProfile.style.display = 'none';
+  openLoginTop.style.display = 'block';
+  mobileLoginBtn.style.display = 'flex';
+  mobileUserProfile.style.display = 'none';
+  accountDropdown.classList.remove('active');
+}
+
+function toggleAccountDropdown() {
+  accountDropdown.classList.toggle('active');
+}
+
+// Update account page with user data
+function updateAccountPage() {
+  if (!currentUser) return;
+  
+  db.collection('users').doc(currentUser.uid).get().then(doc => {
+    if (doc.exists) {
+      const userData = doc.data();
+      if (document.getElementById('accountPageName')) {
+        document.getElementById('accountPageName').textContent = userData.name || 'User';
+        document.getElementById('accountPageEmail').textContent = currentUser.email;
+        document.getElementById('accountPageAvatar').textContent = (userData.name || 'U').charAt(0).toUpperCase();
+        document.getElementById('profileName').value = userData.name || '';
+        document.getElementById('profileEmail').value = currentUser.email;
+        document.getElementById('profilePhone').value = userData.phone || '';
+        
+        // Load settings
+        if (userData.settings) {
+          document.getElementById('emailNotifications').checked = userData.settings.emailNotifications !== false;
+          document.getElementById('smsNotifications').checked = userData.settings.smsNotifications !== false;
+          document.getElementById('pushNotifications').checked = userData.settings.pushNotifications !== false;
+          document.getElementById('personalizedRecs').checked = userData.settings.personalizedRecs !== false;
+          document.getElementById('dataSharing').checked = userData.settings.dataSharing !== false;
+          document.getElementById('languageSelect').value = userData.settings.language || 'en';
+          document.getElementById('currencySelect').value = userData.settings.currency || 'INR';
+        }
+      }
+    }
+  });
 }
 
 // Data loading functions
@@ -1055,7 +1000,7 @@ async function loadWishlist(user) {
     updateWishlistButtons();
     
     // Render wishlist page if open
-    if (document.getElementById('wishlistPage')?.classList.contains('active')) {
+    if (document.getElementById('wishlistPage').classList.contains('active')) {
       renderWishlist();
     }
   } catch (error) {
@@ -1098,7 +1043,7 @@ function createProductCard(product) {
   const card = document.createElement('div');
   card.className = 'product-card';
   card.innerHTML = `
-    <div class="product-card-image" style="background-image: url('${product.image || 'https://via.placeholder.com/200'}')">
+    <div class="product-card-image" style="background-image: url('${product.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'}')">
       ${product.badge ? `<div class="product-card-badge">${product.badge}</div>` : ''}
       ${product.professional ? `<div class="professional-badge">PRO</div>` : ''}
     </div>
@@ -1132,26 +1077,15 @@ function createProductCard(product) {
   `;
   
   // Add event listeners
-  const productImage = card.querySelector('.product-card-image');
-  if (productImage) {
-    productImage.addEventListener('click', () => showProductDetail(product));
-  }
-  
-  const wishlistBtn = card.querySelector('.wishlist-btn');
-  if (wishlistBtn) {
-    wishlistBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleWishlist(product.id);
-    });
-  }
-  
-  const shareBtn = card.querySelector('.share-btn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      shareProduct('default', product);
-    });
-  }
+  card.querySelector('.product-card-image').addEventListener('click', () => showProductDetail(product));
+  card.querySelector('.wishlist-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleWishlist(product.id);
+  });
+  card.querySelector('.share-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    shareProduct('default', product);
+  });
   
   return card;
 }
@@ -1166,7 +1100,7 @@ function renderProductSlider(productsToRender, containerId) {
     const sliderItem = document.createElement('div');
     sliderItem.className = 'slider-item';
     sliderItem.innerHTML = `
-      <div class="slider-item-img" style="background-image: url('${product.image || 'https://via.placeholder.com/200'}')"></div>
+      <div class="slider-item-img" style="background-image: url('${product.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'}')"></div>
       <div class="slider-item-body">
         <div class="slider-item-title">${product.name}</div>
         <div class="slider-item-price">${product.price}</div>
@@ -1203,7 +1137,7 @@ function renderCategoryCircles() {
     const circle = document.createElement('div');
     circle.className = 'category-circle';
     circle.innerHTML = `
-      <div class="category-circle-image" style="background-image: url('${category.image || 'https://via.placeholder.com/70'}')"></div>
+      <div class="category-circle-image" style="background-image: url('${category.image || 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHByb2R1Y3R8ZW58MHx8MHx8fDA%3D&w=1000&q=80'}')"></div>
       <div class="category-circle-name">${category.name}</div>
     `;
     
@@ -1224,7 +1158,7 @@ function renderBannerCarousel() {
   banners.forEach((banner, index) => {
     const slide = document.createElement('div');
     slide.className = 'banner-slide';
-    slide.style.backgroundImage = `url('${banner.image || 'https://via.placeholder.com/800x200'}')`;
+    slide.style.backgroundImage = `url('${banner.image || 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvcHBpbmd8ZW58MHx8MHx8fDA%3D&w=1000&q=80'}')`;
     track.appendChild(slide);
     
     const dot = document.createElement('div');
@@ -1270,38 +1204,31 @@ function showProductDetail(product) {
   
   // Update stock status
   const stockStatus = document.getElementById('detailStockStatus');
-  if (stockStatus) {
-    if (product.stock === 'in') {
-      stockStatus.textContent = 'In Stock';
-      stockStatus.className = 'stock-status in-stock';
-    } else if (product.stock === 'low') {
-      stockStatus.textContent = 'Low Stock';
-      stockStatus.className = 'stock-status low-stock';
-    } else {
-      stockStatus.textContent = 'Out of Stock';
-      stockStatus.className = 'stock-status out-of-stock';
-    }
+  if (product.stock === 'in') {
+    stockStatus.textContent = 'In Stock';
+    stockStatus.className = 'stock-status in-stock';
+  } else if (product.stock === 'low') {
+    stockStatus.textContent = 'Low Stock';
+    stockStatus.className = 'stock-status low-stock';
+  } else {
+    stockStatus.textContent = 'Out of Stock';
+    stockStatus.className = 'stock-status out-of-stock';
   }
   
   // Initialize Amazon/Flipkart gallery
   fkInitGallery(product);
   
   // Update share link
-  const productShareLink = document.getElementById('productShareLink');
-  if (productShareLink) {
-    productShareLink.value = window.location.origin + window.location.pathname + '?product=' + product.id;
-  }
+  document.getElementById('productShareLink').value = window.location.origin + window.location.pathname + '?product=' + product.id;
   
   // Update wishlist button
   const wishlistBtn = document.getElementById('detailWishlistBtn');
-  if (wishlistBtn) {
-    if (wishlist.includes(product.id)) {
-      wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट से हटाएं' : 'Remove from Wishlist';
-      wishlistBtn.classList.add('active');
-    } else {
-      wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट में जोड़ें' : 'Add to Wishlist';
-      wishlistBtn.classList.remove('active');
-    }
+  if (wishlist.includes(product.id)) {
+    wishlistBtn.textContent = 'Remove from Wishlist';
+    wishlistBtn.classList.add('active');
+  } else {
+    wishlistBtn.textContent = 'Add to Wishlist';
+    wishlistBtn.classList.remove('active');
   }
   
   // Load similar products
@@ -1314,20 +1241,6 @@ function showProductDetail(product) {
   
   // Show product detail page
   showPage('productDetailPage');
-}
-
-function setDetailImage(imageUrl, index) {
-  const detailMainImage = document.getElementById('detailMainImage');
-  if (detailMainImage) {
-    detailMainImage.style.backgroundImage = `url('${imageUrl}')`;
-  }
-  
-  // Update active thumbnail
-  document.querySelectorAll('.product-detail-thumbnail').forEach((thumb, i) => {
-    thumb.classList.toggle('active', i === index);
-  });
-  
-  currentImageIndex = index;
 }
 
 function loadSimilarProducts(product) {
@@ -1344,8 +1257,7 @@ function toUserInfo() {
   // Validate size selection
   const selectedSize = document.querySelector('.size-option.selected');
   if (!selectedSize) {
-    const sizeValidationError = document.getElementById('sizeValidationError');
-    if (sizeValidationError) sizeValidationError.classList.add('show');
+    document.getElementById('sizeValidationError').classList.add('show');
     return;
   }
   
@@ -1354,36 +1266,31 @@ function toUserInfo() {
 
 function toPayment() {
   // Validate user info
-  const fullname = document.getElementById('fullname');
-  const mobile = document.getElementById('mobile');
-  const pincode = document.getElementById('pincode');
-  const city = document.getElementById('city');
-  const state = document.getElementById('state');
-  const house = document.getElementById('house');
+  const fullname = document.getElementById('fullname').value;
+  const mobile = document.getElementById('mobile').value;
+  const pincode = document.getElementById('pincode').value;
+  const city = document.getElementById('city').value;
+  const state = document.getElementById('state').value;
+  const house = document.getElementById('house').value;
   
   if (!fullname || !mobile || !pincode || !city || !state || !house) {
     showToast('Please fill in all required fields', 'error');
     return;
   }
   
-  if (!fullname.value || !mobile.value || !pincode.value || !city.value || !state.value || !house.value) {
-    showToast('Please fill in all required fields', 'error');
-    return;
-  }
-  
   // Save user info
   userInfo = {
-    fullName: fullname.value,
-    mobile: mobile.value,
-    pincode: pincode.value,
-    city: city.value,
-    state: state.value,
-    house: house.value
+    fullName: fullname,
+    mobile: mobile,
+    pincode: pincode,
+    city: city,
+    state: state,
+    house: house
   };
   
   // Update summary
   const quantity = parseInt(document.getElementById('qtySelect').value);
-  const productPrice = parseFloat(currentProduct.price.replace('₹', ''));
+  const productPrice = parseFloat(currentProduct.price.replace('₹', '').replace(',', ''));
   const total = (productPrice * quantity) + 50; // Adding delivery charge
   
   document.getElementById('sumProduct').textContent = currentProduct.name;
@@ -1414,39 +1321,37 @@ async function toggleWishlist(productId) {
       });
       
       wishlist.push(productId);
-      showToast(currentLanguage === 'hi' ? 'विशलिस्ट में जोड़ा गया' : 'Added to wishlist', 'success');
+      showToast('Added to wishlist', 'success');
     } else {
       // Remove from wishlist
       await snapshot.docs[0].ref.delete();
       
       wishlist = wishlist.filter(id => id !== productId);
-      showToast(currentLanguage === 'hi' ? 'विशलिस्ट से हटाया गया' : 'Removed from wishlist', 'success');
+      showToast('Removed from wishlist', 'success');
     }
     
     updateWishlistButtons();
     
     // Update detail page if open
-    if (document.getElementById('productDetailPage')?.classList.contains('active') && 
+    if (document.getElementById('productDetailPage').classList.contains('active') && 
         currentProduct && currentProduct.id === productId) {
       const wishlistBtn = document.getElementById('detailWishlistBtn');
-      if (wishlistBtn) {
-        if (wishlist.includes(productId)) {
-          wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट से हटाएं' : 'Remove from Wishlist';
-          wishlistBtn.classList.add('active');
-        } else {
-          wishlistBtn.textContent = currentLanguage === 'hi' ? 'विशलिस्ट में जोड़ें' : 'Add to Wishlist';
-          wishlistBtn.classList.remove('active');
-        }
+      if (wishlist.includes(productId)) {
+        wishlistBtn.textContent = 'Remove from Wishlist';
+        wishlistBtn.classList.add('active');
+      } else {
+        wishlistBtn.textContent = 'Add to Wishlist';
+        wishlistBtn.classList.remove('active');
       }
     }
     
     // Update wishlist page if open
-    if (document.getElementById('wishlistPage')?.classList.contains('active')) {
+    if (document.getElementById('wishlistPage').classList.contains('active')) {
       renderWishlist();
     }
   } catch (error) {
     console.error('Error updating wishlist:', error);
-    showToast(currentLanguage === 'hi' ? 'विशलिस्ट अपडेट करने में विफल' : 'Failed to update wishlist', 'error');
+    showToast('Failed to update wishlist', 'error');
   }
 }
 
@@ -1460,12 +1365,10 @@ function updateWishlistButtons() {
     const productId = btn.getAttribute('data-product-id');
     if (wishlist.includes(productId)) {
       btn.classList.add('active');
-      const svg = btn.querySelector('svg');
-      if (svg) svg.setAttribute('fill', 'currentColor');
+      btn.querySelector('svg').setAttribute('fill', 'currentColor');
     } else {
       btn.classList.remove('active');
-      const svg = btn.querySelector('svg');
-      if (svg) svg.setAttribute('fill', 'none');
+      btn.querySelector('svg').setAttribute('fill', 'none');
     }
   });
 }
@@ -1548,26 +1451,17 @@ function renderRecentlyViewed() {
 
 // Search functions
 function handleSearch() {
-  const searchInput = document.getElementById('searchInput');
-  if (!searchInput) return;
-  
-  const query = searchInput.value.toLowerCase();
+  const query = document.getElementById('searchInput').value.toLowerCase();
   filterProducts(query, 'productGrid');
 }
 
 function handleHomeSearch() {
-  const homeSearchInput = document.getElementById('homeSearchInput');
-  if (!homeSearchInput) return;
-  
-  const query = homeSearchInput.value.toLowerCase();
+  const query = document.getElementById('homeSearchInput').value.toLowerCase();
   const resultsContainer = document.getElementById('homeSearchResults');
-  const homeProductGrid = document.getElementById('homeProductGrid');
-  
-  if (!resultsContainer || !homeProductGrid) return;
   
   if (query.length === 0) {
     resultsContainer.style.display = 'none';
-    homeProductGrid.style.display = 'grid';
+    document.getElementById('homeProductGrid').style.display = 'grid';
     return;
   }
   
@@ -1583,7 +1477,7 @@ function handleHomeSearch() {
   }
   
   resultsContainer.style.display = 'grid';
-  homeProductGrid.style.display = 'none';
+  document.getElementById('homeProductGrid').style.display = 'none';
 }
 
 function filterProducts(query, containerId) {
@@ -1610,22 +1504,16 @@ function filterByCategory(categoryId) {
   });
   
   document.querySelectorAll('.category-pill').forEach(pill => {
-    const category = categories.find(c => c.id === categoryId);
-    if (category && pill.textContent === category.name) {
+    if (pill.textContent === categories.find(c => c.id === categoryId)?.name) {
       pill.classList.add('active');
     }
   });
 }
 
-// Price filter functions - FIXED: Renamed to avoid conflicts
-function applyPriceFilterFunction() {
-  const minPriceInput = document.getElementById('minPrice');
-  const maxPriceInput = document.getElementById('maxPrice');
-  
-  if (!minPriceInput || !maxPriceInput) return;
-  
-  const minPrice = parseFloat(minPriceInput.value) || 0;
-  const maxPrice = parseFloat(maxPriceInput.value) || 5000;
+// Price filter functions
+function applyPriceFilter() {
+  const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+  const maxPrice = parseFloat(document.getElementById('maxPrice').value) || 5000;
   
   const filteredProducts = products.filter(product => {
     const price = parseFloat(product.price.replace('₹', '').replace(',', ''));
@@ -1635,20 +1523,13 @@ function applyPriceFilterFunction() {
   renderProducts(filteredProducts, 'productGrid');
 }
 
-function resetPriceFilterFunction() {
-  const minPrice = document.getElementById('minPrice');
-  const maxPrice = document.getElementById('maxPrice');
-  const minPriceSlider = document.getElementById('minPriceSlider');
-  const maxPriceSlider = document.getElementById('maxPriceSlider');
-  const minPriceValue = document.getElementById('minPriceValue');
-  const maxPriceValue = document.getElementById('maxPriceValue');
-  
-  if (minPrice) minPrice.value = '';
-  if (maxPrice) maxPrice.value = '';
-  if (minPriceSlider) minPriceSlider.value = 0;
-  if (maxPriceSlider) maxPriceSlider.value = 5000;
-  if (minPriceValue) minPriceValue.textContent = '₹0';
-  if (maxPriceValue) maxPriceValue.textContent = '₹5000';
+function resetPriceFilter() {
+  document.getElementById('minPrice').value = '';
+  document.getElementById('maxPrice').value = '';
+  document.getElementById('minPriceSlider').value = 0;
+  document.getElementById('maxPriceSlider').value = 5000;
+  document.getElementById('minPriceValue').textContent = '₹0';
+  document.getElementById('maxPriceValue').textContent = '₹5000';
   
   renderProducts(products, 'productGrid');
 }
@@ -1656,8 +1537,6 @@ function resetPriceFilterFunction() {
 // Quantity functions
 function decreaseQuantity() {
   const qtyInput = document.getElementById('qtySelect');
-  if (!qtyInput) return;
-  
   let value = parseInt(qtyInput.value);
   if (value > 1) {
     qtyInput.value = value - 1;
@@ -1666,8 +1545,6 @@ function decreaseQuantity() {
 
 function increaseQuantity() {
   const qtyInput = document.getElementById('qtySelect');
-  if (!qtyInput) return;
-  
   let value = parseInt(qtyInput.value);
   if (value < 10) {
     qtyInput.value = value + 1;
@@ -1689,9 +1566,7 @@ function orderProductFromDetail() {
   
   // Update gallery
   const galleryMain = document.getElementById('galleryMain');
-  if (galleryMain) {
-    galleryMain.style.backgroundImage = `url('${currentProduct.image || 'https://via.placeholder.com/400'}')`;
-  }
+  galleryMain.style.backgroundImage = `url('${currentProduct.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'}')`;
   
   // Show order page
   showPage('orderPage');
@@ -1735,13 +1610,25 @@ function shareProduct(platform, product = null) {
   }
 }
 
-function copyShareLinkFunction() {
+function copyShareLink() {
   const shareLink = document.getElementById('productShareLink');
-  if (!shareLink) return;
-  
   shareLink.select();
   document.execCommand('copy');
-  showToast(currentLanguage === 'hi' ? 'लिंक क्लिपबोर्ड पर कॉपी हो गया' : 'Link copied to clipboard', 'success');
+  showToast('Link copied to clipboard', 'success');
+}
+
+// Check URL for product ID
+function checkUrlForProduct() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('product');
+  
+  if (productId) {
+    // Find the product by ID
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      showProductDetail(product);
+    }
+  }
 }
 
 // Image zoom functions
@@ -1751,8 +1638,6 @@ function openImageZoom() {
   const imageUrl = currentProduct.images && currentProduct.images[currentImageIndex] ? 
     currentProduct.images[currentImageIndex] : currentProduct.image;
   
-  if (!zoomImage) return;
-  
   zoomImage.src = imageUrl;
   zoomModal.classList.add('active');
   resetZoom();
@@ -1761,24 +1646,17 @@ function openImageZoom() {
 function adjustZoom(delta) {
   currentZoomLevel += delta;
   currentZoomLevel = Math.max(0.5, Math.min(3, currentZoomLevel));
-  if (zoomImage) {
-    zoomImage.style.transform = `scale(${currentZoomLevel})`;
-  }
+  zoomImage.style.transform = `scale(${currentZoomLevel})`;
 }
 
 function resetZoom() {
   currentZoomLevel = 1;
-  if (zoomImage) {
-    zoomImage.style.transform = 'scale(1)';
-  }
+  zoomImage.style.transform = 'scale(1)';
 }
 
 // Newsletter subscription
 function handleNewsletterSubscription() {
-  const newsletterEmail = document.getElementById('newsletterEmail');
-  if (!newsletterEmail) return;
-  
-  const email = newsletterEmail.value;
+  const email = document.getElementById('newsletterEmail').value;
   
   if (!email) {
     showToast('Please enter your email address', 'error');
@@ -1787,314 +1665,148 @@ function handleNewsletterSubscription() {
   
   // In a real app, you would save this to your database
   showToast('Thank you for subscribing!', 'success');
-  newsletterEmail.value = '';
+  document.getElementById('newsletterEmail').value = '';
 }
 
-// Account functions - FIXED: Renamed to avoid conflicts
-function loadAccountPage() {
+// Account functions
+function saveProfile() {
+  const name = document.getElementById('profileName').value;
+  const phone = document.getElementById('profilePhone').value;
+  
   if (!currentUser) return;
-  
-  db.collection('users').doc(currentUser.uid).get().then(doc => {
-    if (doc.exists) {
-      const userData = doc.data();
-      const accountPageName = document.getElementById('accountPageName');
-      const accountPageEmail = document.getElementById('accountPageEmail');
-      const accountPageAvatar = document.getElementById('accountPageAvatar');
-      const profileName = document.getElementById('profileName');
-      const profileEmail = document.getElementById('profileEmail');
-      const profilePhone = document.getElementById('profilePhone');
-      
-      if (accountPageName) accountPageName.textContent = userData.name || 'User';
-      if (accountPageEmail) accountPageEmail.textContent = currentUser.email;
-      if (accountPageAvatar) accountPageAvatar.textContent = (userData.name || 'U').charAt(0).toUpperCase();
-      if (profileName) profileName.value = userData.name || '';
-      if (profileEmail) profileEmail.value = currentUser.email;
-      if (profilePhone) profilePhone.value = userData.phone || '';
-    }
-  }).catch(error => {
-    console.error('Error loading account page:', error);
-  });
-}
-
-function saveProfileFunction() {
-  const profileName = document.getElementById('profileName');
-  const profilePhone = document.getElementById('profilePhone');
-  
-  if (!currentUser || !profileName || !profilePhone) return;
-  
-  const name = profileName.value;
-  const phone = profilePhone.value;
   
   db.collection('users').doc(currentUser.uid).update({
     name: name,
     phone: phone,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
-    showToast(currentLanguage === 'hi' ? 'प्रोफाइल सफलतापूर्वक अपडेट की गई' : 'Profile updated successfully', 'success');
+    showToast('Profile updated successfully', 'success');
     // Update UI
-    if (userName) userName.textContent = name;
-    if (mobileUserName) mobileUserName.textContent = name;
-    if (userAvatar) userAvatar.textContent = name.charAt(0).toUpperCase();
+    userName.textContent = name;
+    mobileUserName.textContent = name;
+    userAvatar.textContent = name.charAt(0).toUpperCase();
   }).catch(error => {
     console.error('Error updating profile:', error);
-    showToast(currentLanguage === 'hi' ? 'प्रोफाइल अपडेट करने में विफल' : 'Failed to update profile', 'error');
+    showToast('Failed to update profile', 'error');
   });
 }
 
-function changePasswordFunction() {
+function changePassword() {
   // In a real app, you would show a modal to change password
-  showToast(currentLanguage === 'hi' ? 'पासवर्ड बदलने की सुविधा जल्द ही आ रही है' : 'Password change feature coming soon', 'info');
+  showToast('Password change feature coming soon', 'info');
 }
 
-function deleteAccountFunction() {
-  if (confirm(currentLanguage === 'hi' ? 'क्या आप वाकई अपना खाता हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।' : 'Are you sure you want to delete your account? This action cannot be undone.')) {
+function deleteAccount() {
+  if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
     // In a real app, you would delete the user account
-    showToast(currentLanguage === 'hi' ? 'खाता हटाने की सुविधा जल्द ही आ रही है' : 'Account deletion feature coming soon', 'info');
+    showToast('Account deletion feature coming soon', 'info');
   }
 }
 
-function loadSettings() {
+function saveSettings() {
+  const emailNotifications = document.getElementById('emailNotifications').checked;
+  const smsNotifications = document.getElementById('smsNotifications').checked;
+  const pushNotifications = document.getElementById('pushNotifications').checked;
+  const personalizedRecs = document.getElementById('personalizedRecs').checked;
+  const dataSharing = document.getElementById('dataSharing').checked;
+  const language = document.getElementById('languageSelect').value;
+  const currency = document.getElementById('currencySelect').value;
+  
   if (!currentUser) return;
-
-  db.collection('users').doc(currentUser.uid).get().then(doc => {
-    if (doc.exists) {
-      const userData = doc.data();
-      const settings = userData.settings || {};
-
-      const emailNotifications = document.getElementById('emailNotifications');
-      const smsNotifications = document.getElementById('smsNotifications');
-      const pushNotifications = document.getElementById('pushNotifications');
-      const personalizedRecs = document.getElementById('personalizedRecs');
-      const dataSharing = document.getElementById('dataSharing');
-      const languageSelect = document.getElementById('languageSelect');
-      const currencySelect = document.getElementById('currencySelect');
-      const darkModeToggle = document.getElementById('darkModeToggle');
-
-      if (emailNotifications) emailNotifications.checked = settings.emailNotifications || false;
-      if (smsNotifications) smsNotifications.checked = settings.smsNotifications || false;
-      if (pushNotifications) pushNotifications.checked = settings.pushNotifications || false;
-      if (personalizedRecs) personalizedRecs.checked = settings.personalizedRecs || false;
-      if (dataSharing) dataSharing.checked = settings.dataSharing || false;
-      if (languageSelect) languageSelect.value = settings.language || currentLanguage;
-      if (currencySelect) currencySelect.value = settings.currency || currentCurrency;
-      if (darkModeToggle) {
-        darkModeToggle.checked = document.documentElement.getAttribute('data-theme') === 'dark';
-      }
-    }
-  }).catch(error => {
-    console.error('Error loading settings:', error);
-  });
-}
-
-function saveSettingsFunction() {
-  const emailNotifications = document.getElementById('emailNotifications');
-  const smsNotifications = document.getElementById('smsNotifications');
-  const pushNotifications = document.getElementById('pushNotifications');
-  const personalizedRecs = document.getElementById('personalizedRecs');
-  const dataSharing = document.getElementById('dataSharing');
-  const languageSelect = document.getElementById('languageSelect');
-  const currencySelect = document.getElementById('currencySelect');
-
-  if (!currentUser || !emailNotifications || !smsNotifications || !pushNotifications || 
-      !personalizedRecs || !dataSharing || !languageSelect || !currencySelect) return;
-
-  const emailNotificationsValue = emailNotifications.checked;
-  const smsNotificationsValue = smsNotifications.checked;
-  const pushNotificationsValue = pushNotifications.checked;
-  const personalizedRecsValue = personalizedRecs.checked;
-  const dataSharingValue = dataSharing.checked;
-  const languageValue = languageSelect.value;
-  const currencyValue = currencySelect.value;
-
+  
   db.collection('users').doc(currentUser.uid).update({
     settings: {
-      emailNotifications: emailNotificationsValue,
-      smsNotifications: smsNotificationsValue,
-      pushNotifications: pushNotificationsValue,
-      personalizedRecs: personalizedRecsValue,
-      dataSharing: dataSharingValue,
-      language: languageValue,
-      currency: currencyValue
+      emailNotifications,
+      smsNotifications,
+      pushNotifications,
+      personalizedRecs,
+      dataSharing,
+      language,
+      currency
     },
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
-    showToast(currentLanguage === 'hi' ? 'सेटिंग्स सफलतापूर्वक सहेजी गईं' : 'Settings saved successfully', 'success');
+    showToast('Settings saved successfully', 'success');
     
-    // Apply language change
-    if (languageValue !== currentLanguage) {
-      currentLanguage = languageValue;
-      localStorage.setItem('language', languageValue);
-      if (languageValue === 'hi') {
-        applyHindiLanguage();
-      } else {
-        applyEnglishLanguage();
-      }
-    }
-    
-    // Apply currency change
-    if (currencyValue !== currentCurrency) {
-      currentCurrency = currencyValue;
-      localStorage.setItem('currency', currencyValue);
-      applyCurrency(currencyValue);
-    }
-    
+    // Apply language change immediately
+    changeLanguage(language);
   }).catch(error => {
     console.error('Error saving settings:', error);
-    showToast(currentLanguage === 'hi' ? 'सेटिंग्स सहेजने में विफल' : 'Failed to save settings', 'error');
+    showToast('Failed to save settings', 'error');
   });
 }
 
-// Language functions
-function applyHindiLanguage() {
-  // Update all text elements to Hindi
-  const translations = {
-    // Navigation
-    'openLoginTop': 'लॉग इन',
-    'openMyOrdersTop': 'मेरे आर्डर',
-    'openContactTop': 'संपर्क करें',
-    'mobileLoginBtn': 'लॉग इन',
-    
-    // Auth Modal
-    'loginTab': 'लॉग इन',
-    'signupTab': 'साइन अप',
-    'switchToLogin': 'पहले से ही एक खाता है? लॉग इन करें',
-    'forgotPasswordLink': 'पासवर्ड भूल गए?',
-    'backToLogin': 'लॉग इन पर वापस जाएं',
-    'resetPasswordBtn': 'पासवर्ड रीसेट करें',
-    
-    // Forms
-    'loginEmail': 'ईमेल',
-    'loginPassword': 'पासवर्ड',
-    'loginBtn': 'लॉग इन',
-    'signupName': 'पूरा नाम',
-    'signupEmail': 'ईमेल',
-    'signupPassword': 'पासवर्ड',
-    'signupBtn': 'साइन अप',
-    'forgotPasswordEmail': 'ईमेल',
-    
-    // Home Page
-    'heroTitle': 'बुयज़ो कार्ट में आपका स्वागत है',
-    'heroSubtitle': 'साफ, तेज चेकआउट। हाथ से चुने गए उत्पाद। पूरी तरह से उत्तरदायी यूआई।',
-    'homeSearchInput': 'उत्पाद खोजें...',
-    
-    // Products Page
-    'productsPage h2': 'सभी उत्पाद',
-    
-    // Account Page
-    'accountPage h2': 'मेरा खाता',
-    'saveProfile': 'प्रोफाइल सहेजें',
-    'changePasswordBtn': 'पासवर्ड बदलें',
-    'deleteAccountBtn': 'खाता हटाएं',
-    
-    // Settings Page
-    'settingsPage h2': 'सेटिंग्स',
-    'saveSettings': 'सेटिंग्स सहेजें',
-    
-    // And many more translations...
-  };
-
-  // Apply translations to elements
-  for (const [id, text] of Object.entries(translations)) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.textContent = text;
-    }
+// Language change function
+function changeLanguage(lang) {
+  // This is a simplified implementation
+  // In a real app, you would have translation files for each language
+  if (lang === 'hi') {
+    // Hindi translations
+    document.querySelectorAll('[data-en]').forEach(element => {
+      const key = element.getAttribute('data-en');
+      if (key && hindiTranslations[key]) {
+        element.textContent = hindiTranslations[key];
+      }
+    });
+    showToast('भाषा हिंदी में बदल गई', 'success');
+  } else {
+    // English (default)
+    document.querySelectorAll('[data-en]').forEach(element => {
+      const key = element.getAttribute('data-en');
+      if (key && englishTranslations[key]) {
+        element.textContent = englishTranslations[key];
+      }
+    });
+    showToast('Language changed to English', 'success');
   }
-
-  // Update placeholders
-  const emailInputs = document.querySelectorAll('input[type="email"]');
-  emailInputs.forEach(input => {
-    if (input.placeholder.includes('Email')) {
-      input.placeholder = 'ईमेल';
-    }
-  });
-
-  const passwordInputs = document.querySelectorAll('input[type="password"]');
-  passwordInputs.forEach(input => {
-    if (input.placeholder.includes('Password')) {
-      input.placeholder = 'पासवर्ड';
-    }
-  });
-
-  showToast('भाषा हिंदी में बदल गई', 'success');
 }
 
-function applyEnglishLanguage() {
-  // Reset all text to English (this would be more comprehensive in a real app)
-  showToast('Language changed to English', 'success');
-}
+// Sample translations (you would expand this in a real app)
+const hindiTranslations = {
+  'Welcome to Buyzo Cart': 'बायज़ो कार्ट में आपका स्वागत है',
+  'Home': 'होम',
+  'Products': 'उत्पाद',
+  'My Orders': 'मेरे ऑर्डर',
+  'Wishlist': 'विशलिस्ट',
+  'Login': 'लॉगिन',
+  'Logout': 'लॉगआउट'
+};
 
-// Currency functions
-function applyCurrency(currency) {
-  // This is a simplified example - in a real app, you would convert all prices
-  const exchangeRates = {
-    'INR': 1,
-    'USD': 0.012,
-    'EUR': 0.011
-  };
-  
-  const symbols = {
-    'INR': '₹',
-    'USD': '$',
-    'EUR': '€'
-  };
-  
-  const rate = exchangeRates[currency] || 1;
-  const symbol = symbols[currency] || '₹';
-  
-  // Update all price displays
-  document.querySelectorAll('.product-card-current-price, .product-card-original-price, .slider-item-price').forEach(element => {
-    const currentText = element.textContent;
-    if (currentText.includes('₹')) {
-      const price = parseFloat(currentText.replace('₹', '').replace(',', ''));
-      const convertedPrice = price * rate;
-      element.textContent = `${symbol}${convertedPrice.toFixed(2)}`;
-    }
-  });
-  
-  showToast(`Currency changed to ${currency}`, 'success');
-}
+const englishTranslations = {
+  'Welcome to Buyzo Cart': 'Welcome to Buyzo Cart',
+  'Home': 'Home',
+  'Products': 'Products',
+  'My Orders': 'My Orders',
+  'Wishlist': 'Wishlist',
+  'Login': 'Login',
+  'Logout': 'Logout'
+};
 
 // Address functions
 function showNewAddressForm() {
-  const newAddressForm = document.getElementById('newAddressForm');
-  if (newAddressForm) {
-    newAddressForm.style.display = 'block';
-  }
+  document.getElementById('newAddressForm').style.display = 'block';
 }
 
 function hideNewAddressForm() {
-  const newAddressForm = document.getElementById('newAddressForm');
-  if (newAddressForm) {
-    newAddressForm.style.display = 'none';
-  }
+  document.getElementById('newAddressForm').style.display = 'none';
 }
 
-function saveAddressFunction() {
-  const addressName = document.getElementById('addressName');
-  const addressMobile = document.getElementById('addressMobile');
-  const addressPincode = document.getElementById('addressPincode');
-  const addressCity = document.getElementById('addressCity');
-  const addressState = document.getElementById('addressState');
-  const addressType = document.getElementById('addressType');
-  const addressStreet = document.getElementById('addressStreet');
-
-  if (!currentUser || !addressName || !addressMobile || !addressPincode || 
-      !addressCity || !addressState || !addressType || !addressStreet) return;
-
-  const name = addressName.value;
-  const mobile = addressMobile.value;
-  const pincode = addressPincode.value;
-  const city = addressCity.value;
-  const state = addressState.value;
-  const type = addressType.value;
-  const street = addressStreet.value;
-
+function saveAddress() {
+  const name = document.getElementById('addressName').value;
+  const mobile = document.getElementById('addressMobile').value;
+  const pincode = document.getElementById('addressPincode').value;
+  const city = document.getElementById('addressCity').value;
+  const state = document.getElementById('addressState').value;
+  const type = document.getElementById('addressType').value;
+  const street = document.getElementById('addressStreet').value;
+  
   if (!name || !mobile || !pincode || !city || !state || !street) {
     showToast('Please fill in all required fields', 'error');
     return;
   }
-
+  
+  if (!currentUser) return;
+  
   db.collection('addresses').add({
     userId: currentUser.uid,
     name: name,
@@ -2104,7 +1816,7 @@ function saveAddressFunction() {
     state: state,
     type: type,
     street: street,
-    isDefault: false,
+    isDefault: false, // You might want to implement logic for default address
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     showToast('Address saved successfully', 'success');
@@ -2118,7 +1830,7 @@ function saveAddressFunction() {
 
 function loadAddresses() {
   if (!currentUser) return;
-
+  
   db.collection('addresses')
     .where('userId', '==', currentUser.uid)
     .orderBy('createdAt', 'desc')
@@ -2126,14 +1838,14 @@ function loadAddresses() {
     .then(snapshot => {
       const container = document.getElementById('savedAddresses');
       if (!container) return;
-
+      
       container.innerHTML = '';
-
+      
       if (snapshot.empty) {
         container.innerHTML = '<p style="color:var(--muted);text-align:center">No addresses saved yet</p>';
         return;
       }
-
+      
       snapshot.docs.forEach(doc => {
         const address = doc.data();
         const addressCard = document.createElement('div');
@@ -2156,192 +1868,6 @@ function loadAddresses() {
     });
 }
 
-// User info save function
-function saveUserInfo() {
-  const fullname = document.getElementById('fullname');
-  const mobile = document.getElementById('mobile');
-  const pincode = document.getElementById('pincode');
-  const city = document.getElementById('city');
-  const state = document.getElementById('state');
-  const house = document.getElementById('house');
-
-  if (!fullname || !mobile || !pincode || !city || !state || !house) return;
-
-  if (!fullname.value || !mobile.value || !pincode.value || !city.value || !state.value || !house.value) {
-    showToast('Please fill in all required fields', 'error');
-    return;
-  }
-
-  userInfo = {
-    fullName: fullname.value,
-    mobile: mobile.value,
-    pincode: pincode.value,
-    city: city.value,
-    state: state.value,
-    house: house.value
-  };
-
-  showToast('Information saved successfully', 'success');
-}
-
-// Step pills update
-function updateStepPills() {
-  const currentPage = document.querySelector('.page.active');
-  if (!currentPage) return;
-
-  const currentPageId = currentPage.id;
-
-  document.querySelectorAll('.step-pill').forEach(pill => {
-    pill.classList.remove('disabled');
-  });
-
-  switch (currentPageId) {
-    case 'homePage':
-    case 'productsPage':
-      document.getElementById('pill-order').classList.add('disabled');
-      document.getElementById('pill-user').classList.add('disabled');
-      document.getElementById('pill-pay').classList.add('disabled');
-      break;
-    case 'orderPage':
-      document.getElementById('pill-user').classList.add('disabled');
-      document.getElementById('pill-pay').classList.add('disabled');
-      break;
-    case 'userPage':
-      document.getElementById('pill-pay').classList.add('disabled');
-      break;
-  }
-}
-
-// Hero messages rotation
-function setupHeroMessages() {
-  const messages = document.querySelectorAll('#heroMessages span');
-  if (messages.length === 0) return;
-  
-  let currentIndex = 0;
-  
-  setInterval(() => {
-    messages.forEach(msg => msg.classList.remove('active'));
-    currentIndex = (currentIndex + 1) % messages.length;
-    messages[currentIndex].classList.add('active');
-  }, 3000);
-}
-
-// Email sending function
-function sendOrderConfirmationEmail(orderData) {
-  // This would use EmailJS or your email service in a real app
-  console.log('Order confirmation email would be sent for:', orderData);
-}
-
-// Sample data fallbacks
-function loadSampleProducts() {
-  products = [
-    {
-      id: '1',
-      name: 'Wireless Bluetooth Earbuds',
-      price: '₹1,299',
-      originalPrice: '₹2,499',
-      image: 'https://images.unsplash.com/photo-1590658165737-15a047b8b5e3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZWFyYnVkc3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60',
-      description: 'High-quality wireless earbuds with noise cancellation',
-      badge: '30% OFF',
-      professional: true,
-      reviews: '128',
-      stock: 'in'
-    },
-    {
-      id: '2',
-      name: 'Smart Fitness Band',
-      price: '₹2,499',
-      image: 'https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zml0bmVzcyUyMGJhbmR8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60',
-      description: 'Track your fitness activities with this smart band',
-      badge: 'NEW',
-      reviews: '89',
-      stock: 'in'
-    },
-    {
-      id: '3',
-      name: 'Wireless Gaming Mouse',
-      price: '₹1,799',
-      originalPrice: '₹2,999',
-      image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FtaW5nJTIwbW91c2V8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60',
-      description: 'Precision gaming mouse with RGB lighting',
-      badge: '40% OFF',
-      reviews: '203',
-      stock: 'low'
-    },
-    {
-      id: '4',
-      name: 'Portable Bluetooth Speaker',
-      price: '₹3,499',
-      image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Ymx1ZXRvb3RoJTIwc3BlYWtlcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60',
-      description: 'Powerful sound in a compact design',
-      reviews: '156',
-      stock: 'in'
-    }
-  ];
-  
-  renderProducts(products, 'homeProductGrid');
-  renderProducts(products, 'productGrid');
-  renderProductSlider(products.slice(0, 10), 'productSlider');
-}
-
-function loadSampleCategories() {
-  categories = [
-    {
-      id: '1',
-      name: 'Electronics',
-      image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZWxlY3Ryb25pY3N8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60'
-    },
-    {
-      id: '2',
-      name: 'Fashion',
-      image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZmFzaGlvbnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60'
-    },
-    {
-      id: '3',
-      name: 'Home & Kitchen',
-      image: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8a2l0Y2hlbnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60'
-    },
-    {
-      id: '4',
-      name: 'Beauty',
-      image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmVhdXR5JTIwcHJvZHVjdHN8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60'
-    },
-    {
-      id: '5',
-      name: 'Sports',
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3BvcnRzfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60'
-    }
-  ];
-  
-  renderCategories();
-  renderCategoryCircles();
-}
-
-function loadSampleBanners() {
-  banners = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvcHBpbmclMjBiYW5uZXJ8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=800&q=60',
-      title: 'Summer Sale',
-      description: 'Up to 50% off on selected items'
-    },
-    {
-      id: '2', 
-      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvcHBpbmclMjBiYW5uZXIlMjAyfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60',
-      title: 'New Arrivals',
-      description: 'Check out the latest products'
-    },
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2hvcHBpbmclMjBiYW5uZXIlMjAzfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60',
-      title: 'Free Shipping',
-      description: 'On orders above ₹999'
-    }
-  ];
-  
-  renderBannerCarousel();
-}
-
 // Order card creation
 function createOrderCard(order) {
   const orderCard = document.createElement('div');
@@ -2352,13 +1878,13 @@ function createOrderCard(order) {
         <div class="order-id">${order.orderId}</div>
         <div class="order-date">${new Date(order.orderDate).toLocaleDateString()}</div>
       </div>
-      <div class="order-status status-confirmed">${order.status}</div>
+      <div class="order-status status-${order.status}">${order.status}</div>
     </div>
     <div class="order-details">
-      <div class="order-product-image" style="background-image: url('${products.find(p => p.id === order.productId)?.image || 'https://via.placeholder.com/80'}')"></div>
+      <div class="order-product-image" style="background-image: url('${products.find(p => p.id === order.productId)?.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'}')"></div>
       <div class="order-product-info">
         <div class="order-product-title">${order.productName}</div>
-        <div class="order-product-price">${order.price}</div>
+        <div class="order-product-price">₹${order.price}</div>
         <div class="order-product-meta">Qty: ${order.quantity} | Size: ${order.size}</div>
       </div>
     </div>
@@ -2384,28 +1910,29 @@ function showOrderDetail(order) {
     <div class="order-detail-section">
       <div class="order-detail-label">Status</div>
       <div class="order-detail-value">
-        <span class="order-status status-confirmed">${order.status}</span>
+        <span class="order-status status-${order.status}">${order.status}</span>
       </div>
     </div>
     <div class="order-detail-section">
       <div class="order-detail-label">Product</div>
       <div class="order-detail-product">
-        <div class="order-detail-image" style="background-image: url('${products.find(p => p.id === order.productId)?.image || 'https://via.placeholder.com/120'}')"></div>
+        <div class="order-detail-image" style="background-image: url('${products.find(p => p.id === order.productId)?.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'}')"></div>
         <div class="order-detail-product-info">
-          <div class="order-detail-value" style="font-weight:600">${order.productName}</div>
-          <div class="order-detail-value">${order.price}</div>
-          <div class="order-detail-value">Quantity: ${order.quantity}</div>
-          <div class="order-detail-value">Size: ${order.size}</div>
+          <div class="order-product-title">${order.productName}</div>
+          <div class="order-product-price">₹${order.price}</div>
+          <div class="order-product-meta">Qty: ${order.quantity} | Size: ${order.size}</div>
         </div>
       </div>
     </div>
     <div class="order-detail-section">
       <div class="order-detail-label">Delivery Address</div>
       <div class="order-detail-value">
-        ${order.userInfo?.fullName || ''}<br>
-        ${order.userInfo?.house || ''}<br>
-        ${order.userInfo?.city || ''}, ${order.userInfo?.state || ''} - ${order.userInfo?.pincode || ''}<br>
-        Mobile: ${order.userInfo?.mobile || ''}
+        ${order.userInfo ? `
+          <div>${order.userInfo.fullName}</div>
+          <div>${order.userInfo.house}</div>
+          <div>${order.userInfo.city}, ${order.userInfo.state} - ${order.userInfo.pincode}</div>
+          <div>Mobile: ${order.userInfo.mobile}</div>
+        ` : 'Address not available'}
       </div>
     </div>
     <div class="order-detail-section">
@@ -2423,17 +1950,152 @@ function showMyOrders() {
   }
 }
 
-// URL parameter handling for shared product links
-function checkUrlForProduct() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const productId = urlParams.get('product');
-  if (productId) {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      showProductDetail(product);
-    }
+// Step pills update
+function updateStepPills() {
+  const currentPage = document.querySelector('.page.active').id;
+  
+  document.querySelectorAll('.step-pill').forEach(pill => {
+    pill.classList.remove('disabled');
+  });
+  
+  switch (currentPage) {
+    case 'homePage':
+    case 'productsPage':
+      document.getElementById('pill-order').classList.add('disabled');
+      document.getElementById('pill-user').classList.add('disabled');
+      document.getElementById('pill-pay').classList.add('disabled');
+      break;
+    case 'orderPage':
+      document.getElementById('pill-user').classList.add('disabled');
+      document.getElementById('pill-pay').classList.add('disabled');
+      break;
+    case 'userPage':
+      document.getElementById('pill-pay').classList.add('disabled');
+      break;
   }
 }
 
-// Call this function after products are loaded
-setTimeout(checkUrlForProduct, 1000);
+// Hero messages rotation
+function setupHeroMessages() {
+  const messages = document.querySelectorAll('#heroMessages span');
+  let currentIndex = 0;
+  
+  if (messages.length === 0) return;
+  
+  setInterval(() => {
+    messages.forEach(msg => msg.classList.remove('active'));
+    currentIndex = (currentIndex + 1) % messages.length;
+    messages[currentIndex].classList.add('active');
+  }, 3000);
+}
+
+// Email sending function
+function sendOrderConfirmationEmail(orderData) {
+  // This would use EmailJS or your email service in a real app
+  console.log('Order confirmation email would be sent for:', orderData);
+}
+
+// Sample data fallbacks
+function loadSampleProducts() {
+  products = [
+    {
+      id: '1',
+      name: 'Wireless Bluetooth Earbuds',
+      price: '₹1,299',
+      originalPrice: '₹2,499',
+      image: 'https://images.unsplash.com/photo-1590658165737-15a047b8b5e3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZWFyYnVkc3xlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
+      description: 'High-quality wireless earbuds with noise cancellation',
+      stock: 'in',
+      badge: '30% OFF',
+      reviews: '128'
+    },
+    {
+      id: '2',
+      name: 'Smart Watch Fitness Tracker',
+      price: '₹2,499',
+      originalPrice: '₹4,999',
+      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
+      description: 'Track your fitness with this advanced smartwatch',
+      stock: 'in',
+      badge: '50% OFF',
+      reviews: '256'
+    },
+    {
+      id: '3',
+      name: 'Wireless Gaming Mouse',
+      price: '₹1,599',
+      image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
+      description: 'Precision gaming mouse with RGB lighting',
+      stock: 'low',
+      badge: 'NEW',
+      reviews: '89'
+    },
+    {
+      id: '4',
+      name: 'Mechanical Keyboard',
+      price: '₹3,299',
+      originalPrice: '₹5,999',
+      image: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
+      description: 'Professional mechanical keyboard with blue switches',
+      stock: 'in',
+      badge: '45% OFF',
+      reviews: '312'
+    }
+  ];
+  
+  renderProducts(products, 'homeProductGrid');
+  renderProducts(products, 'productGrid');
+  renderProductSlider(products.slice(0, 10), 'productSlider');
+}
+
+function loadSampleCategories() {
+  categories = [
+    {
+      id: '1',
+      name: 'Electronics',
+      image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZWxlY3Ryb25pY3N8ZW58MHx8MHx8fDA%3D&w=1000&q=80'
+    },
+    {
+      id: '2',
+      name: 'Fashion',
+      image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZmFzaGlvbnxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80'
+    },
+    {
+      id: '3',
+      name: 'Home & Kitchen',
+      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG9tZSUyMGRlY29yfGVufDB8fDB8fHww&w=1000&q=80'
+    },
+    {
+      id: '4',
+      name: 'Beauty',
+      image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmVhdXR5JTIwcHJvZHVjdHN8ZW58MHx8MHx8fDA%3D&w=1000&q=80'
+    },
+    {
+      id: '5',
+      name: 'Sports',
+      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3BvcnRzfGVufDB8fDB8fHww&w=1000&q=80'
+    }
+  ];
+  
+  renderCategories();
+  renderCategoryCircles();
+}
+
+function loadSampleBanners() {
+  banners = [
+    {
+      id: '1',
+      image: 'https://images.unsplash.com/photo-1607082350899-7e105aa886ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvcHBpbmd8ZW58MHx8MHx8fDA%3D&w=1000&q=80'
+    },
+    {
+      id: '2',
+      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c2hvcHBpbmd8ZW58MHx8MHx8fDA%3D&w=1000&q=80'
+    },
+    {
+      id: '3',
+      image: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2hvcHBpbmd8ZW58MHx8MHx8fDA%3D&w=1000&q=80'
+    }
+  ];
+  
+  renderBannerCarousel();
+}
